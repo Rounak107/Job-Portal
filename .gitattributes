@@ -1,0 +1,16 @@
+# Auto-normalize text files to LF in the repo, Windows will check out CRLF locally if configured
+* text=auto
+
+# Force LF for source files (avoids noisy CRLF warnings)
+*.js  text eol=lf
+*.ts  text eol=lf
+*.jsx text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.md  text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh  text eol=lf

@@ -1,0 +1,13 @@
+<h3>New Application Received</h3>
+<p>Hello,</p>
+<p>{{applicantName}} ({{applicantEmail}}) has applied for <strong>{{jobTitle}}</strong>.</p>
+
+{{#if fullResumeUrl}}
+  <p>
+    <a href="{{fullResumeUrl}}" target="_blank" download>📎 Download Resume (PDF)</a>
+  </p>
+{{else}}
+  <p>No resume attached.</p>
+{{/if}}
+
+<p>Thanks,<br>Job Portal</p>

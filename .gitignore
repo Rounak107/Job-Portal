@@ -1,0 +1,54 @@
+# --- Node (ignore all node_modules everywhere) ---
+node_modules/
+**/node_modules/
+
+# --- Env & secrets ---
+.env
+**/.env
+.env.local
+**/.env.local
+
+# --- Logs & OS cruft ---
+logs/
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+
+# --- Frontend builds ---
+frontend/build/
+frontend/dist/
+frontend/.cache/
+frontend/.next/
+frontend/out/
+
+# --- Backend builds (if any) ---
+backend/dist/
+backend/build/
+
+# --- Coverage & temporary ---
+coverage/
+.tmp/
+.temp/
+cache/
+.eslintcache
+.vite/
+
+# --- Uploads (generated at runtime) ---
+uploads/
+**/uploads/
+
+# --- Prisma / generated (only if you generate client here) ---
+prisma/generated/
+src/generated/prisma/
+
+# --- Editors ---
+.vscode/
+.idea/
+
+# --- Zips/archives ---
+*.zip
+*.tar
+*.tar.gz

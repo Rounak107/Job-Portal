@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  RECRUITER
+  ADMIN
+}
+
+enum Status {
+  PENDING
+  SHORTLISTED
+  REJECTED
+  REVIEWED
+  ACCEPTED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs         Job[]              @relation("PostedJobs")
+  applications Application[]
+  audits       ApplicationAudit[] @relation("AuditChangedBy")
+}
+
+enum WorkMode {
+  OFFICE
+  HOME
+  REMOTE
+  HYBRID
+}
+
+model Job {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  company     String
+  location    String
+  postedById  Int
+  createdAt   DateTime @default(now())
+  salaryMin   Int?
+  salaryMax   Int?
+
+  // NEW:
+  workMode WorkMode @default(REMOTE)
+  role     String?
+
+  // 🔧 add the relation name here so it matches User.jobs
+  postedBy User @relation("PostedJobs", fields: [postedById], references: [id])
+
+  applications Application[]
+}
+
+model Application {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  jobId     Int
+  resumeUrl String
+  status    Status   @default(PENDING)
+  createdAt DateTime @default(now())
+
+  user   User               @relation(fields: [userId], references: [id])
+  job    Job                @relation(fields: [jobId], references: [id])
+  audits ApplicationAudit[]
+}
+
+model ApplicationAudit {
+  id             Int      @id @default(autoincrement())
+  applicationId  Int
+  previousStatus Status
+  newStatus      Status
+  changedById    Int
+  note           String?
+  createdAt      DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id])
+  changedBy   User        @relation("AuditChangedBy", fields: [changedById], references: [id])
+
+  @@index([applicationId])
+  @@index([changedById])
+}
