@@ -1,4 +1,4 @@
-// src/controllers/applicationController.ts
+// backend/src/controllers/applicationController.ts
 import { Request, Response } from 'express';
 import prisma from '../prisma';
 import {
@@ -7,7 +7,6 @@ import {
   sendStatusUpdateEmail,
 } from '../services/emailService';
 
-// Allowed statuses (sync with Prisma enum)
 export const ALLOWED_STATUSES = [
   'PENDING',
   'SHORTLISTED',
@@ -21,7 +20,7 @@ function isValidStatus(s: any): s is AppStatus {
   return typeof s === 'string' && (ALLOWED_STATUSES as readonly string[]).includes(s);
 }
 
-// Apply to a job (JSON body with { resumeUrl })
+// Apply to a job
 export const applyToJob = async (req: Request, res: Response) => {
   try {
     const jobId = parseInt(req.params.id, 10);
@@ -31,7 +30,6 @@ export const applyToJob = async (req: Request, res: Response) => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     if (!resumeUrl) return res.status(400).json({ message: 'resumeUrl is required' });
 
-    // get job + recruiter (postedBy)
     const job = await prisma.job.findUnique({
       where: { id: jobId },
       include: {
@@ -51,7 +49,7 @@ export const applyToJob = async (req: Request, res: Response) => {
       },
     });
 
-    // queue emails (fire-and-forget – they log to logs/email.log)
+    // Fire & forget emails (log in logs/email.log)
     try {
       if (application.user?.email && application.job?.title) {
         sendApplicantEmail(application.user.email, application.job.title, application.resumeUrl);
@@ -77,7 +75,7 @@ export const applyToJob = async (req: Request, res: Response) => {
   }
 };
 
-// Get my applications
+// My applications
 export const getMyApplications = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
@@ -96,7 +94,7 @@ export const getMyApplications = async (req: Request, res: Response) => {
   }
 };
 
-// Get applicants for a job
+// Applicants for a job
 export const getApplicantsForJob = async (req: Request, res: Response) => {
   try {
     const jobId = parseInt(req.params.id, 10);
@@ -112,7 +110,7 @@ export const getApplicantsForJob = async (req: Request, res: Response) => {
   }
 };
 
-// Update application status
+// Update status (single)
 export const updateApplicationStatus = async (req: Request, res: Response) => {
   try {
     const appId = parseInt(req.params.id, 10);
@@ -167,7 +165,7 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
   }
 };
 
-// Batch update application statuses
+// Batch update statuses
 export const batchUpdateStatus = async (req: Request, res: Response) => {
   try {
     const { applicationIds, status, note } = req.body;
@@ -243,7 +241,7 @@ export const batchUpdateStatus = async (req: Request, res: Response) => {
   }
 };
 
-// Get audits
+// Audits
 export const getApplicationAudits = async (req: Request, res: Response) => {
   try {
     const applicationId = parseInt(req.params.id, 10);

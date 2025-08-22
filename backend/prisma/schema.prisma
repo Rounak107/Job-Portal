@@ -28,20 +28,6 @@ enum Status {
   ACCEPTED
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  jobs         Job[]              @relation("PostedJobs")
-  applications Application[]
-  audits       ApplicationAudit[] @relation("AuditChangedBy")
-}
-
 enum WorkMode {
   OFFICE
   HOME
@@ -49,25 +35,41 @@ enum WorkMode {
   HYBRID
 }
 
+model User {
+  id          Int                 @id @default(autoincrement())
+  name        String
+  email       String              @unique
+  password    String
+  role        Role                @default(USER)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  loginCount  Int                 @default(0)
+
+  jobs         Job[]              @relation("PostedJobs")
+  applications Application[]
+  audits       ApplicationAudit[] @relation("AuditChangedBy")
+  jobViews     JobView[]          // 👈 opposite relation for JobView.user
+}
+
 model Job {
-  id          Int      @id @default(autoincrement())
+  id          Int           @id @default(autoincrement())
   title       String
   description String
   company     String
   location    String
   postedById  Int
-  createdAt   DateTime @default(now())
+  createdAt   DateTime      @default(now())
   salaryMin   Int?
   salaryMax   Int?
+  views       Int           @default(0)
 
-  // NEW:
   workMode WorkMode @default(REMOTE)
   role     String?
 
-  // 🔧 add the relation name here so it matches User.jobs
   postedBy User @relation("PostedJobs", fields: [postedById], references: [id])
 
   applications Application[]
+  jobViews     JobView[]       // 👈 opposite relation for JobView.job
 }
 
 model Application {
@@ -78,8 +80,8 @@ model Application {
   status    Status   @default(PENDING)
   createdAt DateTime @default(now())
 
-  user   User               @relation(fields: [userId], references: [id])
-  job    Job                @relation(fields: [jobId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
+  job    Job  @relation(fields: [jobId], references: [id])
   audits ApplicationAudit[]
 }
 
@@ -97,4 +99,15 @@ model ApplicationAudit {
 
   @@index([applicationId])
   @@index([changedById])
+}
+
+model JobView {
+  id        Int      @id @default(autoincrement())
+  jobId     Int
+  userId    Int?     // optional: which registered user viewed
+  ip        String?  // optional: request ip
+  createdAt DateTime @default(now())
+
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id])
 }

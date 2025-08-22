@@ -1,8 +1,6 @@
-// frontend/src/components/JobsPage.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-
 import {
   Box,
   Grid,
@@ -77,6 +75,8 @@ type Job = {
   workMode?: 'OFFICE' | 'HOME' | 'REMOTE' | 'HYBRID';
   role?: string | null;
   postedBy?: { id: number; name: string; email: string };
+  createdAt?: string | null;
+  postedAt?: string | null;
 };
 
 const WORK_MODE_LABEL: Record<string, string> = {
@@ -129,6 +129,16 @@ function slugify(title: string) {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+function timeAgo(dateString: string) {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Posted today';
+  if (diffDays === 1) return 'Posted 1 day ago';
+  return `Posted ${diffDays} days ago`;
+}
+
 // New component for salary filter
 const SalaryFilterContent = ({ 
   initialMin, 
@@ -165,6 +175,7 @@ const SalaryFilterContent = ({
               <CurrencyRupeeIcon fontSize="small" />
             </InputAdornment>
           ),
+          inputProps: { min: 0 },
         }}
       />
       <TextField
@@ -179,6 +190,7 @@ const SalaryFilterContent = ({
               <CurrencyRupeeIcon fontSize="small" />
             </InputAdornment>
           ),
+          inputProps: { min: 0 },
         }}
       />
       <Button
@@ -203,7 +215,43 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
-  const [savedJobs, setSavedJobs] = useState<Set<number>>(new Set());
+
+  // Saved jobs set (persisted)
+  const [savedJobs, setSavedJobs] = useState<number[]>(() => {
+    try {
+      const raw = localStorage.getItem('savedJobs');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          return arr;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to read saved jobs from localStorage', e);
+    }
+    return [];
+  });
+
+  // Check if a job is saved
+  const isJobSaved = (id: number) => savedJobs.includes(id);
+
+  // Toggle saved job
+  const toggleSaveJob = (jobId: number) => {
+    let updated: number[];
+    if (savedJobs.includes(jobId)) {
+      updated = savedJobs.filter(id => id !== jobId);
+    } else {
+      updated = [...savedJobs, jobId];
+    }
+    setSavedJobs(updated);
+    
+    // Persist to localStorage
+    try {
+      localStorage.setItem('savedJobs', JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Failed to persist saved jobs to localStorage', e);
+    }
+  };
 
   // Mobile filter states
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -270,8 +318,8 @@ export default function JobsPage() {
       if (location) params.location = location;
       if (role) params.role = role;
       if (workMode) params.workMode = workMode;
-      if (minSalary) params.minSalary = Number(minSalary);
-      if (maxSalary) params.maxSalary = Number(maxSalary);
+      if (minSalary) params.minSalary = Number(minSalary) || undefined;
+      if (maxSalary) params.maxSalary = Number(maxSalary) || undefined;
 
       const res = await api.get('/jobs', { params });
       setJobs(res.data.jobs || []);
@@ -295,18 +343,6 @@ export default function JobsPage() {
     setPage(1);
     loadJobs(1);
   }
-
-  const toggleSaveJob = (jobId: number) => {
-    setSavedJobs(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(jobId)) {
-        newSet.delete(jobId);
-      } else {
-        newSet.add(jobId);
-      }
-      return newSet;
-    });
-  };
 
   const currency = (v?: number | null) => (typeof v === 'number' ? `₹${v.toLocaleString()}` : '—');
 
@@ -420,7 +456,7 @@ export default function JobsPage() {
                     py: 3,
                     justifyContent: 'flex-start',
                     background: workMode === wm ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
-                    color: workMode === wm ? '#fff' : 'inherit',
+                    color: workMode === wm ? '#fff' : 'inheritros',
                     border: '1px solid',
                     borderColor: workMode === wm ? 'transparent' : theme.palette.divider,
                   }}
@@ -619,7 +655,13 @@ export default function JobsPage() {
             label="Min salary"
             type="number"
             value={minSalary}
-            onChange={(e) => setMinSalary(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Only allow numeric values or empty string
+              if (value === '' || /^[0-9]*$/.test(value)) {
+                setMinSalary(value);
+              }
+            }}
             fullWidth
             size="small"
             InputProps={{
@@ -628,6 +670,7 @@ export default function JobsPage() {
                   <CurrencyRupeeIcon fontSize="small" />
                 </InputAdornment>
               ),
+              inputProps: { min: 0, step: 1 },
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
@@ -639,7 +682,13 @@ export default function JobsPage() {
             label="Max salary"
             type="number"
             value={maxSalary}
-            onChange={(e) => setMaxSalary(e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Only allow numeric values or empty string
+              if (value === '' || /^[0-9]*$/.test(value)) {
+                setMaxSalary(value);
+              }
+            }}
             fullWidth
             size="small"
             InputProps={{
@@ -648,6 +697,7 @@ export default function JobsPage() {
                   <CurrencyRupeeIcon fontSize="small" />
                 </InputAdornment>
               ),
+              inputProps: { min: 0, step: 1 },
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
@@ -911,9 +961,33 @@ export default function JobsPage() {
                         }} />
                       )}
                     </Stack>
-                    <Typography variant="body2" color="text.secondary">
-                      Page {page} of {totalPages}
-                    </Typography>
+
+                    {/* RIGHT SIDE: Saved button with badge */}
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Button
+                        component={Link}
+                        to="/saved-jobs"
+                        variant="outlined"
+                        startIcon={
+                          <Badge badgeContent={savedJobs.length} color="primary">
+                            <BookmarkIcon />
+                          </Badge>
+                        }
+                        sx={{
+                          borderRadius: 3,
+                          borderColor: theme.palette.divider,
+                          '&:hover': {
+                            borderColor: theme.palette.primary.main,
+                            background: alpha(theme.palette.primary.main, 0.05),
+                          },
+                        }}
+                      >
+                        Saved
+                      </Button>
+                      <Typography variant="body2" color="text.secondary">
+                        Page {page} of {totalPages}
+                      </Typography>
+                    </Stack>
                   </Stack>
                 </Paper>
               </Fade>
@@ -975,211 +1049,210 @@ export default function JobsPage() {
                   </Paper>
                 </Fade>
               ) : (
-                jobs.map((job, index) => (
-                  <Grow in timeout={500 + index * 100} key={job.id}>
-                    <Card
-                      sx={{
-                        borderRadius: 4,
-                        overflow: 'hidden',
-                        position: 'relative',
-                        background: 'rgba(255,255,255,0.98)',
-                        backdropFilter: 'blur(20px)',
-                        boxShadow: '0 5px 20px rgba(0,0,0,0.08)',
-                        transition: 'all 0.3s ease',
-                        animation: `${fadeIn} 0.5s ease-out`,
-                        border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
-                        '&:hover': {
-                          transform: { xs: 'none', md: 'translateY(-5px)' },
-                          boxShadow: '0 15px 40px rgba(0,0,0,0.12)',
-                          borderColor: alpha(theme.palette.primary.main, 0.2),
-                          '& .job-arrow': {
-                            transform: 'translateX(5px)',
-                          },
-                          '& .job-gradient': {
-                            opacity: 1,
-                          },
-                        },
-                      }}
-                    >
-                      {/* Gradient overlay on hover */}
-                      <Box
-                        className="job-gradient"
+                jobs.map((job, index) => {
+                  const postedDate = job.createdAt || job.postedAt || null;
+
+                  return (
+                    <Grow in timeout={500 + index * 100} key={job.id}>
+                      <Card
                         sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          height: '4px',
-                          background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                          opacity: 0,
-                          transition: 'opacity 0.3s ease',
+                          borderRadius: 4,
+                          overflow: 'hidden',
+                          position: 'relative',
+                          background: 'rgba(255,255,255,0.98)',
+                          backdropFilter: 'blur(20px)',
+                          boxShadow: '0 5px 20px rgba(0,0,0,0.08)',
+                          transition: 'all 0.3s ease',
+                          animation: `${fadeIn} 0.5s ease-out`,
+                          border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+                          '&:hover': {
+                            transform: { xs: 'none', md: 'translateY(-5px)' },
+                            boxShadow: '0 15px 40px rgba(0,0,0,0.12)',
+                            borderColor: alpha(theme.palette.primary.main, 0.2),
+                            '& .job-arrow': {
+                              transform: 'translateX(5px)',
+                            },
+                            '& .job-gradient': {
+                              opacity: 1,
+                            },
+                          },
                         }}
-                      />
+                      >
+                        {/* Gradient overlay on hover */}
+                        <Box
+                          className="job-gradient"
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: '4px',
+                            background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                            opacity: 0,
+                            transition: 'opacity 0.3s ease',
+                          }}
+                        />
 
-                      <CardActionArea component={Link} to={`/jobs/${job.id}_${slugify(job.title)}`}>
-                        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                          <Stack spacing={2}>
-                            {/* Header with title and save button */}
-                            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                              <Box flex={1}>
-                                <Typography 
-                                  variant={isMobile ? "h6" : "h5"} 
-                                  fontWeight={800} 
-                                  gutterBottom 
-                                  sx={{
-                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                    backgroundClip: 'text',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                  }}
-                                >
-                                  {job.title}
-                                </Typography>
+                        <CardActionArea component={Link} to={`/jobs/${job.id}_${slugify(job.title)}`}>
+                          <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                            <Stack spacing={2}>
+                              {/* Header with title and save button */}
+                              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                                <Box flex={1}>
+                                  <Typography
+                                    variant={isMobile ? "h6" : "h5"}
+                                    fontWeight={800}
+                                    gutterBottom
+                                    sx={{
+                                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                      backgroundClip: 'text',
+                                      WebkitBackgroundClip: 'text',
+                                      WebkitTextFillColor: 'transparent',
+                                    }}
+                                  >
+                                    {job.title}
+                                  </Typography>
 
-                                <Stack 
-                                  direction={{ xs: 'column', sm: 'row' }} 
-                                  spacing={{ xs: 1, sm: 3 }} 
-                                  alignItems={{ xs: 'flex-start', sm: 'center' }}
-                                  flexWrap="wrap"
-                                >
-                                  <Stack direction="row" spacing={0.5} alignItems="center">
-                                    <BusinessIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
-                                    <Typography variant="body2" fontWeight={600}>
-                                      {job.company}
-                                    </Typography>
-                                  </Stack>
-
-                                  <Stack direction="row" spacing={0.5} alignItems="center">
-                                    <LocationOnIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
-                                    <Typography variant="body2" color="text.secondary">
-                                      {job.location}
-                                    </Typography>
-                                  </Stack>
-
-                                  {job.role && (
+                                  <Stack 
+                                    direction={{ xs: 'column', sm: 'row' }} 
+                                    spacing={{ xs: 1, sm: 3 }} 
+                                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                    flexWrap="wrap"
+                                  >
                                     <Stack direction="row" spacing={0.5} alignItems="center">
-                                      <WorkIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
-                                      <Typography variant="body2" color="text.secondary">
-                                        {job.role}
+                                      <BusinessIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                                      <Typography variant="body2" fontWeight={600}>
+                                        {job.company}
                                       </Typography>
                                     </Stack>
-                                  )}
-                                </Stack>
-                              </Box>
 
-                              <IconButton
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  toggleSaveJob(job.id);
-                                }}
-                                sx={{
-                                  '&:hover': {
-                                    transform: 'scale(1.2)',
-                                  },
-                                  transition: 'transform 0.2s ease',
-                                }}
+                                    <Stack direction="row" spacing={0.5} alignItems="center">
+                                      <LocationOnIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                                      <Typography variant="body2" color="text.secondary">
+                                        {job.location}
+                                      </Typography>
+                                    </Stack>
+
+                                    {job.role && (
+                                      <Stack direction="row" spacing={0.5} alignItems="center">
+                                        <WorkIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                                        <Typography variant="body2" color="text.secondary">
+                                          {job.role}
+                                        </Typography>
+                                      </Stack>
+                                    )}
+                                  </Stack>
+                                </Box>
+
+                                <Tooltip title={isJobSaved(job.id) ? 'Saved' : 'Save job'}>
+                                  <IconButton
+                                    aria-label={isJobSaved(job.id) ? 'Unsave job' : 'Save job'}
+                                    aria-pressed={isJobSaved(job.id)}
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      toggleSaveJob(job.id);
+                                    }}
+                                    sx={{ color: isJobSaved(job.id) ? "primary.main" : "grey.500" }}
+                                  >
+                                    {isJobSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+
+                              {/* Tags */}
+                              <Stack 
+                                direction="row" 
+                                spacing={1} 
+                                alignItems="center" 
+                                flexWrap="wrap"
+                                sx={{ gap: 1 }}
                               >
-                                {savedJobs.has(job.id) ? (
-                                  <BookmarkIcon sx={{ color: theme.palette.primary.main }} />
-                                ) : (
-                                  <BookmarkBorderIcon />
+                                {job.workMode && (
+                                  <Chip
+                                    icon={WORK_MODE_ICONS[job.workMode]}
+                                    label={WORK_MODE_LABEL[job.workMode] || job.workMode}
+                                    size="small"
+                                    sx={{
+                                      borderRadius: 3,
+                                      background: alpha(theme.palette.primary.main, 0.1),
+                                      border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                                      '& .MuiChip-icon': {
+                                        color: theme.palette.primary.main,
+                                      },
+                                    }}
+                                  />
                                 )}
-                              </IconButton>
-                            </Stack>
-
-                            {/* Tags */}
-                            <Stack 
-                              direction="row" 
-                              spacing={1} 
-                              alignItems="center" 
-                              flexWrap="wrap"
-                              sx={{ gap: 1 }}
-                            >
-                              {job.workMode && (
                                 <Chip
-                                  icon={WORK_MODE_ICONS[job.workMode]}
-                                  label={WORK_MODE_LABEL[job.workMode] || job.workMode}
+                                  icon={<CurrencyRupeeIcon />}
+                                  label={`${currency(job.salaryMin)}${job.salaryMax ? ` – ${currency(job.salaryMax)}` : ''}`}
                                   size="small"
                                   sx={{
                                     borderRadius: 3,
-                                    background: alpha(theme.palette.primary.main, 0.1),
-                                    border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                                    background: alpha(theme.palette.success.main, 0.1),
+                                    border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
                                     '& .MuiChip-icon': {
-                                      color: theme.palette.primary.main,
+                                      color: theme.palette.success.main,
                                     },
                                   }}
                                 />
-                              )}
-                              <Chip
-                                icon={<CurrencyRupeeIcon />}
-                                label={`${currency(job.salaryMin)}${job.salaryMax ? ` – ${currency(job.salaryMax)}` : ''}`}
-                                size="small"
-                                sx={{
-                                  borderRadius: 3,
-                                  background: alpha(theme.palette.success.main, 0.1),
-                                  border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
-                                  '& .MuiChip-icon': {
-                                    color: theme.palette.success.main,
-                                  },
-                                }}
-                              />
-                              <Chip
-                                icon={<AccessTimeIcon />}
-                                label="Posted 2 days ago"
-                                size="small"
-                                sx={{
-                                  borderRadius: 3,
-                                  background: alpha(theme.palette.info.main, 0.1),
-                                  border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
-                                  '& .MuiChip-icon': {
-                                    color: theme.palette.info.main,
-                                  },
-                                }}
-                              />
-                            </Stack>
+                                <Chip
+                                  icon={<AccessTimeIcon />}
+                                  label={postedDate ? timeAgo(postedDate) : '—'}
+                                  size="small"
+                                  sx={{
+                                    borderRadius: 3,
+                                    background: alpha(theme.palette.info.main, 0.1),
+                                    border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                                    '& .MuiChip-icon': {
+                                      color: theme.palette.info.main,
+                                    },
+                                  }}
+                                />
+                              </Stack>
 
-                            {/* Description */}
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                display: '-webkit-box',
-                                WebkitLineClamp: { xs: 2, md: 3 },
-                                WebkitBoxOrient: 'vertical',
-                                overflow: 'hidden',
-                                lineHeight: 1.6,
-                              }}
-                            >
-                              {job.description}
-                            </Typography>
-
-                            {/* Action */}
-                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                              {/* Description */}
                               <Typography
                                 variant="body2"
+                                color="text.secondary"
                                 sx={{
-                                  color: theme.palette.primary.main,
-                                  fontWeight: 600,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 0.5,
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: { xs: 2, md: 3 },
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  lineHeight: 1.6,
                                 }}
                               >
-                                View Details
-                                <ArrowForwardIcon
-                                  className="job-arrow"
-                                  fontSize="small"
-                                  sx={{ transition: 'transform 0.3s ease' }}
-                                />
+                                {job.description}
                               </Typography>
+
+                              {/* Action */}
+                              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    color: theme.palette.primary.main,
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                  }}
+                                >
+                                  View Details
+                                  <ArrowForwardIcon
+                                    className="job-arrow"
+                                    fontSize="small"
+                                    sx={{ transition: 'transform 0.3s ease' }}
+                                  />
+                                </Typography>
+                              </Stack>
                             </Stack>
-                          </Stack>
-                        </CardContent>
-                      </CardActionArea>
-                    </Card>
-                  </Grow>
-                ))
+                          </CardContent>
+                        </CardActionArea>
+                      </Card>
+                    </Grow>
+                  );
+                })
               )}
 
               {/* Pagination */}

@@ -1,4 +1,4 @@
-// src/services/emailService.ts
+// backend/src/services/emailService.ts
 import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
@@ -10,6 +10,8 @@ const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Job Portal <no-reply@example.local>';
+const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
+const BACKEND_BASE_URL  = process.env.BACKEND_BASE_URL  || 'http://localhost:5000';
 
 // ----------------- LOGGING -----------------
 const logsDir = path.join(process.cwd(), 'logs');
@@ -19,7 +21,7 @@ function logLine(line: string) {
   const file = path.join(logsDir, 'email.log');
   const ts = new Date().toISOString();
   const final = `[${ts}] ${line}\n`;
-  try { fs.appendFileSync(file, final); } catch (e) { /* noop */ }
+  try { fs.appendFileSync(file, final); } catch { /* noop */ }
   console.log(final.trim());
 }
 
@@ -30,6 +32,11 @@ const transporter = nodemailer.createTransport({
   secure: SMTP_PORT === 465,
   auth: SMTP_USER && SMTP_PASS ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
 });
+
+// Optional: verify at boot
+transporter.verify()
+  .then(() => logLine(`SMTP READY (host=${SMTP_HOST}, port=${SMTP_PORT}, user=${SMTP_USER})`))
+  .catch((e) => logLine(`SMTP VERIFY FAILED: ${e?.message || e}`));
 
 // ----------------- TEMPLATES -----------------
 const templatesDir = path.join(process.cwd(), 'emails', 'templates');
@@ -44,7 +51,7 @@ function loadTemplates() {
     const files = fs.readdirSync(templatesDir);
     for (const f of files) {
       if (f.endsWith('.hbs')) {
-        const name = path.basename(f, '.hbs'); // exact base name (case-sensitive)
+        const name = path.basename(f, '.hbs'); // base name must match what you call
         const content = fs.readFileSync(path.join(templatesDir, f), 'utf8');
         templates[name] = Handlebars.compile(content);
         logLine(`Loaded email template "${name}"`);
@@ -59,10 +66,11 @@ loadTemplates();
 async function sendEmailTemplate(to: string, subject: string, templateName: string, context: object) {
   let html: string;
   const tpl = templates[templateName];
+
   if (tpl) {
     html = tpl(context);
   } else {
-    // small compatibility fallback if someone used old file names
+    // legacy fallback one-off (keep if you had older filenames)
     const fallbackName =
       templateName === 'recruiterNewApplication' && templates['applicationReceived']
         ? 'applicationReceived'
@@ -90,7 +98,7 @@ type EmailJob = {
   template: string;
   context: object;
   attempts: number;
-  maxAttempts: number;      // REQUIRED on jobs (never optional on the queue)
+  maxAttempts: number;
   nextAttemptAt: number;
 };
 
@@ -102,7 +110,7 @@ function enqueueEmail(args: {
   subject: string;
   template: string;
   context: object;
-  maxAttempts?: number;     // OPTIONAL for callers
+  maxAttempts?: number;
 }) {
   const job: EmailJob = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -120,9 +128,7 @@ function enqueueEmail(args: {
   return job.id;
 }
 
-async function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
-}
+async function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
 async function emailWorker() {
   emailWorkerRunning = true;
@@ -145,7 +151,6 @@ async function emailWorker() {
         logLine(`GAVE UP id=${job.id} to=${job.to} subj="${job.subject}"`);
         emailQueue.shift();
       } else {
-        // exponential backoff
         job.nextAttemptAt = Date.now() + Math.pow(2, job.attempts) * 1000;
       }
     }
@@ -155,13 +160,27 @@ async function emailWorker() {
 
 // ----------------- PUBLIC HELPERS -----------------
 
+/** Welcome email on registration */
+export function sendWelcomeEmail(to: string, name?: string) {
+  return enqueueEmail({
+    to,
+    subject: `Welcome to JobNow`,
+    template: 'welcome', // emails/templates/welcome.hbs
+    context:  { name, baseUrl: FRONTEND_BASE_URL }, 
+  });
+}
+
 /** Email to the applicant: "We received your application" */
 export function sendApplicantEmail(to: string, jobTitle: string, resumeUrl?: string) {
+  const fullResumeUrl = resumeUrl
+    ? `${BACKEND_BASE_URL}${resumeUrl}`
+    : null;
+
   return enqueueEmail({
     to,
     subject: `Application Received — ${jobTitle}`,
-    template: 'applicantReceived', // matches emails/templates/applicantReceived.hbs
-    context: { jobTitle, resumeUrl },
+    template: 'applicantReceived',
+    context: { jobTitle, resumeUrl, fullResumeUrl }, // pass both if you like
   });
 }
 
@@ -180,7 +199,7 @@ export function sendRecruiterNewApplicationEmail(
   return enqueueEmail({
     to,
     subject: `New Application — ${jobTitle}`,
-    template: 'recruiterNewApplication',
+    template: 'recruiterNewApplication', // emails/templates/recruiterNewApplication.hbs
     context: { jobTitle, applicantName, applicantEmail, fullResumeUrl },
     maxAttempts: 3
   });
@@ -191,12 +210,12 @@ export function sendStatusUpdateEmail(to: string, jobTitle: string, status: stri
   return enqueueEmail({
     to,
     subject: `Application Update — ${jobTitle}`,
-    template: 'statusUpdate', // matches emails/templates/statusUpdate.hbs
+    template: 'statusUpdate', // emails/templates/statusUpdate.hbs
     context: { jobTitle, status, note },
   });
 }
 
 // Optional manual test
-export async function sendTestEmailNow(to: string, subject = 'Test Email', body = { hello: 'world' }) {
+export async function sendTestEmailNow(to: string, subject = 'Test Email', body: { hello: string }) {
   return sendEmailTemplate(to, subject, 'statusUpdate', body);
 }

@@ -7,6 +7,8 @@ import userRoutes from './routes/userRoutes';
 import jobRoutes from './routes/jobRoutes';
 import applicationRoutes from './routes/applicationRoutes';
 import path from 'path';
+import recruiterRoutes from './routes/recruiterRoutes';
+import testEmailRoutes from "./routes/testEmail";
 
 dotenv.config(); // Load .env
 
@@ -36,6 +38,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/recruiter', recruiterRoutes);
+app.use("/api", testEmailRoutes);
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 

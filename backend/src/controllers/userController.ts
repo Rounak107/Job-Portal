@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import prisma from '../prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { sendWelcomeEmail } from '../services/emailService';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -37,6 +38,9 @@ export const registerUser = async (req: Request, res: Response) => {
       },
     });
 
+    // fire-and-forget (doesn't block response)
+    try { sendWelcomeEmail(user.email, user.name); } catch (e) {}
+
     res.status(201).json({ message: 'User registered successfully', user });
   } catch (error: any) {
     console.error('registerUser error:', error);
@@ -48,15 +52,31 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
 
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) return res.status(401).json({ message: 'Invalid email or password' });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid email or password' });
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
+    // ✅ Increment loginCount
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { loginCount: { increment: 1 } },
+    });
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '1d' }
+    );
 
     return res.status(200).json({
       message: 'Login successful',
@@ -66,6 +86,7 @@ export const loginUser = async (req: Request, res: Response) => {
         email: user.email,
         name: user.name,
         role: user.role,
+        loginCount: user.loginCount + 1, // return updated count in response
       },
     });
   } catch (error: any) {
@@ -89,6 +110,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
         role: true,
         createdAt: true,
         updatedAt: true,
+        loginCount: true,
       },
     });
 
@@ -100,7 +122,7 @@ export const getCurrentUser = async (req: Request, res: Response) => {
   }
 };
 
-// Existing dashboard function (keeps as-is)
+// User Dashboard
 export const getUserDashboard = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;

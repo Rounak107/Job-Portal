@@ -1,11 +1,22 @@
 <html>
   <body style="font-family: Arial, sans-serif;">
-    <h2>Application Received</h2>
-    <p>Hi,</p>
-    <p>We received your application for <strong>{{jobTitle}}</strong>.</p>
-    {{#if resumeUrl}}
-      <p>Resume: {{resumeUrl}}</p>
-    {{/if}}
-    <p>Thanks,<br/>Job Portal</p>
+    <table width="100%" cellspacing="0" cellpadding="0" style="font-family: Arial, sans-serif;">
+  <tr>
+    <td style="padding:20px;">
+      <h3>We received your application</h3>
+      <p>Thanks for applying for <strong>{{jobTitle}}</strong>. Our team (or the recruiter) will review your application soon.</p>
+
+      {{#if fullResumeUrl}}
+        <p style="margin:20px 0;">
+          <a href="{{fullResumeUrl}}" target="_blank" style="text-decoration:none;color:#111827;">
+            📎 Download Resume (PDF)
+          </a>
+        </p>
+      {{/if}}
+
+      <p style="color:#6b7280;font-size:13px">This is an automated confirmation from JobNow.</p>
+    </td>
+  </tr>
+</table>
   </body>
 </html>
