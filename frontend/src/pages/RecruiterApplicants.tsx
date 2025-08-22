@@ -18,6 +18,8 @@ import {
   Alert,
 } from '@mui/material';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 type ApplicantRow = {
   id: number;                 // application id
   status: 'PENDING' | 'REJECTED' | 'SHORTLISTED' | 'REVIEWED' | 'ACCEPTED';
@@ -98,15 +100,16 @@ export default function RecruiterApplicants() {
 
       setSaving(s => ({ ...s, [appId]: true }));
 
-      const res = await fetch(`/api/applications/${appId}/status`, {
-        method: 'PATCH',
-        headers: authHeaders,
-        body: JSON.stringify({ status: next }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j?.message || `Update failed (${res.status})`);
-      }
+      const res = await fetch(`${API_BASE}/api/applications/applications/${appId}/status`, {
+  method: 'PATCH',
+  headers: authHeaders,
+  body: JSON.stringify({ status: next }),
+});
+
+if (!res.ok) {
+  const j = await res.json().catch(() => ({}));
+  throw new Error(j?.message || `Update failed (${res.status})`);
+}
 
       // optimistic UI: update that row
       setRows(prev => prev.map(r => (r.id === appId ? { ...r, status: next } : r)));
