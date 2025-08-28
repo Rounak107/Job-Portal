@@ -2,16 +2,132 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import {
-  Box, Paper, Typography, TextField, Button, Stack, MenuItem, Snackbar, Alert
+  Box, Paper, Typography, TextField, Button, Stack, MenuItem, Snackbar, Alert,
+  InputAdornment, Fade, Zoom, Slide, Card, CardContent, LinearProgress
 } from '@mui/material';
+import { styled, alpha } from '@mui/material/styles';
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
+import WorkIcon from '@mui/icons-material/Work';
+import BusinessIcon from '@mui/icons-material/Business';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
+import DescriptionIcon from '@mui/icons-material/Description';
+import PublishIcon from '@mui/icons-material/Publish';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Styled Components
+const GradientContainer = styled(Box)(({ theme }) => ({
+  minHeight: '100vh',
+  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
+  padding: theme.spacing(3),
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
+
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.95)} 0%, ${alpha(theme.palette.background.paper, 0.98)} 100%)`,
+  backdropFilter: 'blur(20px)',
+  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+  borderRadius: 24,
+  overflow: 'hidden',
+  position: 'relative',
+  boxShadow: `0 20px 60px ${alpha(theme.palette.primary.main, 0.1)}`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 6,
+    background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+  }
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 16,
+    transition: 'all 0.3s ease-in-out',
+    backgroundColor: alpha(theme.palette.background.paper, 0.8),
+    '&:hover': {
+      transform: 'translateY(-2px)',
+      boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.15)}`,
+    },
+    '&.Mui-focused': {
+      transform: 'translateY(-2px)',
+      boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.25)}`,
+    }
+  },
+  '& .MuiInputLabel-root': {
+    fontWeight: 600,
+  }
+}));
+
+const GradientButton = styled(Button)(({ theme }) => ({
+  borderRadius: 16,
+  textTransform: 'none',
+  fontWeight: 700,
+  fontSize: '1.1rem',
+  padding: '16px 32px',
+  background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
+  boxShadow: `0 8px 30px ${alpha(theme.palette.primary.main, 0.4)}`,
+  transition: 'all 0.3s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-3px)',
+    boxShadow: `0 12px 40px ${alpha(theme.palette.primary.main, 0.5)}`,
+  },
+  '&:active': {
+    transform: 'translateY(-1px)',
+  },
+  '&:disabled': {
+    background: alpha(theme.palette.grey[400], 0.6),
+    transform: 'none',
+    boxShadow: 'none',
+  }
+}));
+
+const FloatingCard = styled(motion.div)(({ theme }) => ({
+  width: '100%',
+  maxWidth: 700,
+}));
 
 const workModes = [
-  { value: 'OFFICE', label: 'Work from Office' },
-  { value: 'HOME', label: 'Work from Home' },
-  { value: 'REMOTE', label: 'Remote' },
-  { value: 'HYBRID', label: 'Hybrid' },
+  { value: 'OFFICE', label: 'Work from Office', icon: '🏢' },
+  { value: 'HOME', label: 'Work from Home', icon: '🏠' },
+  { value: 'REMOTE', label: 'Remote', icon: '🌍' },
+  { value: 'HYBRID', label: 'Hybrid', icon: '🔄' },
 ];
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      staggerChildren: 0.1,
+      ease: "easeOut"
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: "easeOut" }
+  }
+};
+
+const formSectionVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.5 }
+  }
+};
 
 export default function JobCreate() {
   const navigate = useNavigate();
@@ -26,7 +142,11 @@ export default function JobCreate() {
     role: '',
   });
   const [loading, setLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ 
+    open: false, 
+    message: '', 
+    severity: 'success' 
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -58,123 +178,289 @@ export default function JobCreate() {
   };
 
   return (
-    <Box className="max-w-2xl mx-auto p-6">
-      <Paper className="p-6" elevation={3}>
-        <Typography variant="h5" fontWeight={700} gutterBottom>
-          Post a New Job
-        </Typography>
-        <form onSubmit={handleSubmit}>
-          <Stack spacing={3}>
-            <TextField
-              label="Job Title"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Company"
-              name="company"
-              value={form.company}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Location"
-              name="location"
-              value={form.location}
-              onChange={handleChange}
-              required
-              fullWidth
-            />
-            <TextField
-              label="Role (e.g. Frontend, Backend)"
-              name="role"
-              value={form.role}
-              onChange={handleChange}
-              fullWidth
-            />
-            <TextField
-              label="Description"
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              required
-              multiline
-              minRows={4}
-              fullWidth
-            />
-            <Stack direction="row" spacing={2}>
-              <TextField
-                label="Min Salary"
-                name="salaryMin"
-                value={form.salaryMin}
-                onChange={handleChange}
-                type="number"
-                fullWidth
-                InputProps={{
-                  startAdornment: <CurrencyRupeeIcon sx={{ mr: 1, opacity: 0.6 }} />,
-                }}
-              />
-              <TextField
-                label="Max Salary"
-                name="salaryMax"
-                value={form.salaryMax}
-                onChange={handleChange}
-                type="number"
-                fullWidth
-                InputProps={{
-                  startAdornment: <CurrencyRupeeIcon sx={{ mr: 1, opacity: 0.6 }} />,
-                }}
-              />
-            </Stack>
-            <TextField
-              select
-              label="Work Mode"
-              name="workMode"
-              value={form.workMode}
-              onChange={handleSelectChange}
-              fullWidth
-              required
-            >
-              <MenuItem value="">Select work mode</MenuItem>
-              {workModes.map((wm) => (
-                <MenuItem key={wm.value} value={wm.value}>{wm.label}</MenuItem>
-              ))}
-            </TextField>
-            <Button
-              type="submit"
-              variant="contained"
-              size="large"
-              disabled={loading}
-              sx={{
-                borderRadius: 3,
-                py: 1.2,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                boxShadow: '0 4px 15px rgba(102,126,234,0.4)',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(102,126,234,0.6)',
-                },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              {loading ? 'Posting...' : 'Post Job'}
-            </Button>
-          </Stack>
-        </form>
-      </Paper>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+    <GradientContainer>
+      <FloatingCard
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+        <StyledPaper elevation={0}>
+          {loading && (
+            <LinearProgress 
+              sx={{ 
+                position: 'absolute', 
+                top: 6, 
+                left: 0, 
+                right: 0,
+                height: 4,
+                borderRadius: 2,
+                background: 'transparent'
+              }} 
+            />
+          )}
+          
+          <Box sx={{ p: { xs: 3, md: 5 } }}>
+            <motion.div variants={itemVariants}>
+              <Box textAlign="center" mb={4}>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  <PublishIcon 
+                    sx={{ 
+                      fontSize: 64, 
+                      color: 'primary.main',
+                      mb: 2,
+                      filter: 'drop-shadow(0 4px 8px rgba(25,118,210,0.3))'
+                    }} 
+                  />
+                </motion.div>
+                <Typography 
+                  variant="h3" 
+                  fontWeight={800}
+                  sx={{ 
+                    background: 'linear-gradient(45deg, #1976d2 30%, #9c27b0 90%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    mb: 1
+                  }}
+                >
+                  Post a New Job
+                </Typography>
+                <Typography variant="h6" color="text.secondary" fontWeight={400}>
+                  Find the perfect candidate for your team
+                </Typography>
+              </Box>
+            </motion.div>
+
+            <motion.form onSubmit={handleSubmit} variants={itemVariants}>
+              <Stack spacing={4}>
+                {/* Job Title & Company Row */}
+                <motion.div variants={formSectionVariants}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+                    <StyledTextField
+                      label="Job Title"
+                      name="title"
+                      value={form.title}
+                      onChange={handleChange}
+                      required
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <WorkIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <StyledTextField
+                      label="Company"
+                      name="company"
+                      value={form.company}
+                      onChange={handleChange}
+                      required
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <BusinessIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Stack>
+                </motion.div>
+
+                {/* Location & Role Row */}
+                <motion.div variants={formSectionVariants}>
+                  <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+                    <StyledTextField
+                      label="Location"
+                      name="location"
+                      value={form.location}
+                      onChange={handleChange}
+                      required
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LocationOnIcon color="primary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <StyledTextField
+                      label="Role (e.g. Frontend, Backend)"
+                      name="role"
+                      value={form.role}
+                      onChange={handleChange}
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <WorkIcon color="secondary" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Stack>
+                </motion.div>
+
+                {/* Description */}
+                <motion.div variants={formSectionVariants}>
+                  <StyledTextField
+                    label="Job Description"
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    required
+                    multiline
+                    minRows={6}
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 2 }}>
+                          <DescriptionIcon color="primary" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiInputBase-root': {
+                        alignItems: 'flex-start',
+                      }
+                    }}
+                  />
+                </motion.div>
+
+                {/* Salary Range */}
+                <motion.div variants={formSectionVariants}>
+                  <Typography variant="h6" fontWeight={600} mb={2} color="primary">
+                    💰 Salary Range (Optional)
+                  </Typography>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
+                    <StyledTextField
+                      label="Minimum Salary"
+                      name="salaryMin"
+                      value={form.salaryMin}
+                      onChange={handleChange}
+                      type="number"
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <CurrencyRupeeIcon color="success" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <StyledTextField
+                      label="Maximum Salary"
+                      name="salaryMax"
+                      value={form.salaryMax}
+                      onChange={handleChange}
+                      type="number"
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <CurrencyRupeeIcon color="success" />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Stack>
+                </motion.div>
+
+                {/* Work Mode */}
+                <motion.div variants={formSectionVariants}>
+                  <Typography variant="h6" fontWeight={600} mb={2} color="primary">
+                    🏢 Work Mode
+                  </Typography>
+                  <StyledTextField
+                    select
+                    label="Select Work Mode"
+                    name="workMode"
+                    value={form.workMode}
+                    onChange={handleSelectChange}
+                    fullWidth
+                    required
+                  >
+                    <MenuItem value="" disabled>
+                      <em>Choose work arrangement</em>
+                    </MenuItem>
+                    {workModes.map((wm) => (
+                      <MenuItem key={wm.value} value={wm.value}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <span>{wm.icon}</span>
+                          <span>{wm.label}</span>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </StyledTextField>
+                </motion.div>
+
+                {/* Submit Button */}
+                <motion.div 
+                  variants={formSectionVariants}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Box pt={2}>
+                    <GradientButton
+                      type="submit"
+                      variant="contained"
+                      size="large"
+                      disabled={loading}
+                      fullWidth
+                      startIcon={
+                        loading ? (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          >
+                            <PublishIcon />
+                          </motion.div>
+                        ) : (
+                          <PublishIcon />
+                        )
+                      }
+                    >
+                      {loading ? 'Publishing Job...' : 'Publish Job Posting'}
+                    </GradientButton>
+                  </Box>
+                </motion.div>
+              </Stack>
+            </motion.form>
+          </Box>
+        </StyledPaper>
+      </FloatingCard>
+
+      <AnimatePresence>
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={3000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          TransitionComponent={Slide}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert 
+            severity={snackbar.severity} 
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            icon={snackbar.severity === 'success' ? <CheckCircleIcon /> : undefined}
+            sx={{ 
+              borderRadius: 3,
+              fontWeight: 600,
+              '& .MuiAlert-icon': {
+                fontSize: '1.5rem'
+              }
+            }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </AnimatePresence>
+    </GradientContainer>
   );
 }

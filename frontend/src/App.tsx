@@ -12,15 +12,9 @@ import JobDetails from "./pages/JobDetails";
 import RecruiterApplicants from './pages/RecruiterApplicants';
 import JobCreate from './pages/JobCreate';
 import SavedJobs from "./pages/SavedJobs";
-
-function RecruiterDashboardPlaceholder() {
-  return (
-    <div className="max-w-5xl mx-auto bg-white p-6 rounded shadow">
-      <h2 className="text-xl font-semibold mb-3">Recruiter Dashboard (coming soon)</h2>
-      <p>Here you will see your posted jobs and applicants.</p>
-    </div>
-  );
-}
+import Profile from "./pages/Profile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const theme = createTheme({
   typography: { fontFamily: `"Inter", "Roboto", "Helvetica", "Arial", sans-serif` },
@@ -39,7 +33,8 @@ export default function App() {
               <Route path="/" element={<JobsPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/" element={<JobsPage />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/jobs/:idSlug" element={<JobDetails/>} />
               <Route
                 path="/recruiter"
@@ -49,7 +44,6 @@ export default function App() {
                   </PrivateRoute>
                 }
               />
-
               <Route
                 path="/recruiter/applicants"
                 element={
@@ -66,6 +60,26 @@ export default function App() {
                   </PrivateRoute>
                 }
               />
+
+              {/* ONLY USER can open their own profile */}
+              <Route
+                path="/profile"
+                element={
+                  <PrivateRoute roles={['USER']}>
+                    <Profile />
+                  </PrivateRoute>
+                }
+              />
+              {/* Recruiter/Admin can view applicant profile by id */}
+              <Route
+                path="/profile/:userId"
+                element={
+                  <PrivateRoute roles={['RECRUITER','ADMIN']}>
+                    <Profile />
+                  </PrivateRoute>
+                }
+              />
+
               <Route path="/saved-jobs" element={<SavedJobs />} />
             </Routes>
           </main>

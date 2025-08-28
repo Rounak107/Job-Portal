@@ -1,9 +1,20 @@
 <html>
   <body style="font-family: Arial, sans-serif;">
     <h2>Application Update</h2>
-    <p>Hi,</p>
+    <p>Hello {{applicantName}},</p>
     <p>Your application for <strong>{{jobTitle}}</strong> is now <strong>{{status}}</strong>.</p>
     {{#if note}}<p>Note: {{note}}</p>{{/if}}
+
+    {{#if isAccepted}}
+  {{#if recruiterEmail}}
+    <p>Please contact the recruiter at:
+      <a href="mailto:{{recruiterEmail}}">{{recruiterEmail}}</a>
+    </p>
+  {{/if}}
+{{/if}}
+
+
+
     <p>Thanks,<br/>Job Portal</p>
   </body>
 </html>

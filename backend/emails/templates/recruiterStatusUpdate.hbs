@@ -1,0 +1,10 @@
+<html>
+  <body style="font-family: Arial, sans-serif;">
+    <h2>Applicant Status Updated</h2>
+    <p>Hello {{recruiterName}},</p>
+    <p>The application for <strong>{{jobTitle}}</strong> by <strong>{{applicantName}}</strong> ({{applicantEmail}})
+    has been updated to: <strong>{{status}}</strong>. Please contact the Selected Candidate though Mail or Phone Number.</p>
+    {{#if note}}<p>Note from you: {{note}}</p>{{/if}}
+    <p>Thanks,<br/>Job Portal</p>
+  </body>
+</html>

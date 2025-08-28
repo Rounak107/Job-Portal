@@ -33,7 +33,6 @@ const transporter = nodemailer.createTransport({
   auth: SMTP_USER && SMTP_PASS ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
 });
 
-// Optional: verify at boot
 transporter.verify()
   .then(() => logLine(`SMTP READY (host=${SMTP_HOST}, port=${SMTP_PORT}, user=${SMTP_USER})`))
   .catch((e) => logLine(`SMTP VERIFY FAILED: ${e?.message || e}`));
@@ -45,13 +44,13 @@ const templates: Record<string, Handlebars.TemplateDelegate> = {};
 function loadTemplates() {
   try {
     if (!fs.existsSync(templatesDir)) {
-      logLine(`Templates folder not found: ${templatesDir} — fallback simple HTML will be used.`);
+      logLine(`Templates folder not found: ${templatesDir}`);
       return;
     }
     const files = fs.readdirSync(templatesDir);
     for (const f of files) {
       if (f.endsWith('.hbs')) {
-        const name = path.basename(f, '.hbs'); // base name must match what you call
+        const name = path.basename(f, '.hbs');
         const content = fs.readFileSync(path.join(templatesDir, f), 'utf8');
         templates[name] = Handlebars.compile(content);
         logLine(`Loaded email template "${name}"`);
@@ -70,19 +69,8 @@ async function sendEmailTemplate(to: string, subject: string, templateName: stri
   if (tpl) {
     html = tpl(context);
   } else {
-    // legacy fallback one-off (keep if you had older filenames)
-    const fallbackName =
-      templateName === 'recruiterNewApplication' && templates['applicationReceived']
-        ? 'applicationReceived'
-        : null;
-
-    if (fallbackName) {
-      html = templates[fallbackName](context);
-      logLine(`Template "${templateName}" not found; used fallback "${fallbackName}".`);
-    } else {
-      html = `<html><body><h3>${subject}</h3><pre>${JSON.stringify(context, null, 2)}</pre></body></html>`;
-      logLine(`Template "${templateName}" not found; sending fallback HTML.`);
-    }
+    html = `<html><body><h3>${subject}</h3><pre>${JSON.stringify(context, null, 2)}</pre></body></html>`;
+    logLine(`Template "${templateName}" not found; sending fallback HTML.`);
   }
 
   const info = await transporter.sendMail({ from: FROM_EMAIL, to, subject, html });
@@ -160,31 +148,35 @@ async function emailWorker() {
 
 // ----------------- PUBLIC HELPERS -----------------
 
-/** Welcome email on registration */
 export function sendWelcomeEmail(to: string, name?: string) {
   return enqueueEmail({
     to,
     subject: `Welcome to JobNow`,
-    template: 'welcome', // emails/templates/welcome.hbs
-    context:  { name, baseUrl: FRONTEND_BASE_URL }, 
+    template: 'welcome',
+    context: { name, baseUrl: FRONTEND_BASE_URL }, 
   });
 }
 
-/** Email to the applicant: "We received your application" */
 export function sendApplicantEmail(to: string, jobTitle: string, resumeUrl?: string) {
-  const fullResumeUrl = resumeUrl
-    ? `${BACKEND_BASE_URL}${resumeUrl}`
-    : null;
-
+  const fullResumeUrl = resumeUrl ? `${BACKEND_BASE_URL}${resumeUrl}` : null;
   return enqueueEmail({
     to,
     subject: `Application Received — ${jobTitle}`,
     template: 'applicantReceived',
-    context: { jobTitle, resumeUrl, fullResumeUrl }, // pass both if you like
+    context: { jobTitle, resumeUrl, fullResumeUrl },
   });
 }
 
-/** Email to the recruiter who posted the job: "You got a new application" */
+export function sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
+  return enqueueEmail({
+    to,
+    subject: `Reset your JobPortal password`,
+    template: 'passwordReset',
+    context: { name, resetUrl },
+    maxAttempts: 3,
+  });
+}
+
 export function sendRecruiterNewApplicationEmail(
   to: string,
   jobTitle: string,
@@ -192,30 +184,58 @@ export function sendRecruiterNewApplicationEmail(
   applicantEmail: string,
   resumeUrl?: string
 ) {
-  const fullResumeUrl = resumeUrl
-    ? `${process.env.FRONTEND_BASE_URL || 'http://localhost:5000'}${resumeUrl}`
-    : null;
-
+  const fullResumeUrl = resumeUrl ? `${FRONTEND_BASE_URL}${resumeUrl}` : null;
   return enqueueEmail({
     to,
     subject: `New Application — ${jobTitle}`,
-    template: 'recruiterNewApplication', // emails/templates/recruiterNewApplication.hbs
+    template: 'recruiterNewApplication',
     context: { jobTitle, applicantName, applicantEmail, fullResumeUrl },
     maxAttempts: 3
   });
 }
 
-/** Email to applicant on status changes */
-export function sendStatusUpdateEmail(to: string, jobTitle: string, status: string, note?: string) {
+// Applicant mail on status change
+export function sendStatusUpdateEmail(
+  applicantEmail: string,
+  applicantName: string,
+  jobTitle: string,
+  status: string,
+  recruiterEmail?: string,
+  note?: string
+) {
   return enqueueEmail({
-    to,
-    subject: `Application Update — ${jobTitle}`,
-    template: 'statusUpdate', // emails/templates/statusUpdate.hbs
-    context: { jobTitle, status, note },
+    to: applicantEmail,
+    subject: `Your application status for ${jobTitle} is now ${status}`,
+    template: 'statusUpdate',
+    context: {
+      applicantName,
+      jobTitle,
+      status,
+      recruiterEmail,
+      note,
+      isAccepted: status === 'ACCEPTED',   // <-- add this line
+    },
   });
 }
 
-// Optional manual test
+/** Recruiter mail when they update applicant status */
+export function sendRecruiterStatusUpdateEmail(
+  recruiterEmail: string,
+  recruiterName: string,
+  jobTitle: string,
+  applicantName: string,
+  applicantEmail: string,
+  status: string,
+  note?: string
+) {
+  return enqueueEmail({
+    to: recruiterEmail,
+    subject: `Applicant status updated for ${jobTitle}`,
+    template: 'recruiterStatusUpdate',
+    context: { recruiterName, jobTitle, applicantName, applicantEmail, status, note },
+  });
+}
+
 export async function sendTestEmailNow(to: string, subject = 'Test Email', body: { hello: string }) {
   return sendEmailTemplate(to, subject, 'statusUpdate', body);
 }

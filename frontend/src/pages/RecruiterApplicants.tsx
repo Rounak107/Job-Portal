@@ -10,19 +10,47 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  TableContainer,
   Stack,
   Select,
   MenuItem,
   Button,
   Snackbar,
   Alert,
+  Chip,
+  Avatar,
+  IconButton,
+  Fade,
+  Slide,
+  Grow,
+  Paper,
+  Tooltip,
+  useTheme,
+  alpha,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
+import { Link } from 'react-router-dom';
+import {
+  Person,
+  Work,
+  Email,
+  CalendarToday,
+  Visibility,
+  CheckCircle,
+  Cancel,
+  Schedule,
+  TrendingUp,
+  Search,
+} from '@mui/icons-material';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+type Status = 'PENDING' | 'REJECTED' | 'REVIEWED' | 'ACCEPTED';
+
 type ApplicantRow = {
-  id: number;                 // application id
-  status: 'PENDING' | 'REJECTED' | 'SHORTLISTED' | 'REVIEWED' | 'ACCEPTED';
+  id: number;
+  status: Status;
   appliedAt: string;
   resumeUrl?: string | null;
   user: { id: number; name: string; email: string } | null;
@@ -30,62 +58,149 @@ type ApplicantRow = {
 };
 
 function getToken() {
-  try { return localStorage.getItem('jobportal_token') || ''; } catch { return ''; }
+  try {
+    return localStorage.getItem('jobportal_token') || '';
+  } catch {
+    return '';
+  }
 }
 
-const statusDisplayToEnum: Record<string, ApplicantRow['status']> = {
-  Pending: 'PENDING',
-  Rejected: 'REJECTED',
-  Selected: 'SHORTLISTED', // <- maps "Selected" to SHORTLISTED
-};
-
-const enumToStatusDisplay: Record<ApplicantRow['status'], string> = {
+const STATUS_LABEL: Record<Status, string> = {
   PENDING: 'Pending',
   REJECTED: 'Rejected',
-  SHORTLISTED: 'Selected',
   REVIEWED: 'Reviewed',
   ACCEPTED: 'Accepted',
 };
 
+// Options WITHOUT "Reviewed"
+const STATUS_OPTIONS: { value: Exclude<Status, 'REVIEWED'>; label: string }[] = [
+  { value: 'PENDING', label: STATUS_LABEL.PENDING },
+  { value: 'ACCEPTED', label: STATUS_LABEL.ACCEPTED },
+  { value: 'REJECTED', label: STATUS_LABEL.REJECTED },
+];
+
+// Normalize incoming API status to our enum
+function normalizeStatus(s: any): Status {
+  const key = String(s ?? '').trim().toUpperCase().replace(/[\s_-]/g, '');
+  const map: Record<string, Status> = {
+    PENDING: 'PENDING',
+    PENDINGREVIEW: 'PENDING',
+    UNDERREVIEW: 'REVIEWED',
+    INREVIEW: 'REVIEWED',
+    REVIEWED: 'REVIEWED',
+    ACCEPTED: 'ACCEPTED',
+    APPROVED: 'ACCEPTED',
+    REJECTED: 'REJECTED',
+  };
+  return map[key] || 'PENDING';
+}
+
+const statusConfig: Record<
+  Status,
+  { color: string; bgColor: string; icon: typeof Schedule; label: string }
+> = {
+  PENDING: {
+    color: '#FF9800',
+    bgColor: '#FFF3E0',
+    icon: Schedule,
+    label: 'Pending Review',
+  },
+  REJECTED: {
+    color: '#F44336',
+    bgColor: '#FFEBEE',
+    icon: Cancel,
+    label: 'Rejected',
+  },
+  REVIEWED: {
+    color: '#2196F3',
+    bgColor: '#E3F2FD',
+    icon: Visibility,
+    label: 'Under Review',
+  },
+  ACCEPTED: {
+    color: '#4CAF50',
+    bgColor: '#E8F5E9',
+    icon: CheckCircle,
+    label: 'Accepted',
+  },
+};
+
 export default function RecruiterApplicants() {
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<ApplicantRow[]>([]);
-  const [editStatus, setEditStatus] = useState<Record<number, string>>({});
+  const [editStatus, setEditStatus] = useState<Record<number, Status>>({});
   const [saving, setSaving] = useState<Record<number, boolean>>({});
   const [toast, setToast] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false, message: '', severity: 'success'
+    open: false,
+    message: '',
+    severity: 'success',
   });
 
-  const authHeaders = useMemo(() => ({
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${getToken()}`
-  }), []);
+  // Search state
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const authHeaders = useMemo(
+    () => ({
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${getToken()}`,
+    }),
+    []
+  );
+
+  // Calculate stats (based on normalized statuses)
+  const stats = useMemo(() => {
+    const total = rows.length;
+    const pending = rows.filter((r) => r.status === 'PENDING').length;
+    const accepted = rows.filter((r) => r.status === 'ACCEPTED').length;
+    const rejected = rows.filter((r) => r.status === 'REJECTED').length;
+    const reviewed = rows.filter((r) => r.status === 'REVIEWED').length;
+
+    return { total, pending, accepted, rejected, reviewed };
+  }, [rows]);
+
+  const visibleRows = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) => {
+      const name = r.user?.name?.toLowerCase() || '';
+      const email = r.user?.email?.toLowerCase() || '';
+      const title = r.job?.title?.toLowerCase() || '';
+      return name.includes(q) || email.includes(q) || title.includes(q);
+    });
+  }, [rows, searchQuery]);
 
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
-        // If you want to filter by jobId, add ?jobId=123 to this URL
-        const res = await fetch('/api/applications/recruiter/applicants', {
+        const res = await fetch(`${API_BASE}/api/applications/recruiter/applicants`, {
           headers: authHeaders,
           cache: 'no-store',
         });
         if (!res.ok) throw new Error(`Failed to load applicants (${res.status})`);
-        const data = await res.json();
-        const applicants: ApplicantRow[] = (data.applicants || data.items || []).map((a: any) => ({
-          id: a.id,
-          status: a.status,
-          appliedAt: a.appliedAt || a.createdAt,
+        const data = await res.json().catch(() => ({}));
+
+        const list = Array.isArray(data.applicants) ? data.applicants : Array.isArray(data.items) ? data.items : [];
+        const applicants: ApplicantRow[] = list.map((a: any) => ({
+          id: Number(a.id),
+          status: normalizeStatus(a.status),
+          appliedAt: a.appliedAt || a.createdAt || '',
           resumeUrl: a.resumeUrl ?? null,
           user: a.user ?? null,
           job: a.job ?? null,
         }));
+
         setRows(applicants);
-        // initialize dropdown selections with current status labels
-        const init: Record<number, string> = {};
-        applicants.forEach(r => { init[r.id] = enumToStatusDisplay[r.status] || 'Pending'; });
+        const init: Record<number, Status> = {};
+        applicants.forEach((r) => {
+          init[r.id] = r.status;
+        });
         setEditStatus(init);
       } catch (e: any) {
+        console.error(e);
         setToast({ open: true, message: e?.message || 'Failed to load applicants', severity: 'error' });
       } finally {
         setLoading(false);
@@ -95,24 +210,21 @@ export default function RecruiterApplicants() {
 
   async function confirmUpdate(appId: number) {
     try {
-      const display = editStatus[appId] || 'Pending';
-      const next = statusDisplayToEnum[display] || 'PENDING';
-
-      setSaving(s => ({ ...s, [appId]: true }));
+      const next = editStatus[appId] || 'PENDING';
+      setSaving((s) => ({ ...s, [appId]: true }));
 
       const res = await fetch(`${API_BASE}/api/applications/applications/${appId}/status`, {
-  method: 'PATCH',
-  headers: authHeaders,
-  body: JSON.stringify({ status: next }),
-});
+        method: 'PATCH',
+        headers: authHeaders,
+        body: JSON.stringify({ status: next }),
+      });
 
-if (!res.ok) {
-  const j = await res.json().catch(() => ({}));
-  throw new Error(j?.message || `Update failed (${res.status})`);
-}
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j?.message || `Update failed (${res.status})`);
+      }
 
-      // optimistic UI: update that row
-      setRows(prev => prev.map(r => (r.id === appId ? { ...r, status: next } : r)));
+      setRows((prev) => prev.map((r) => (r.id === appId ? { ...r, status: next } : r)));
 
       setToast({
         open: true,
@@ -120,97 +232,461 @@ if (!res.ok) {
         severity: 'success',
       });
     } catch (e: any) {
+      console.error(e);
       setToast({ open: true, message: e?.message || 'Failed to update status', severity: 'error' });
     } finally {
-      setSaving(s => ({ ...s, [appId]: false }));
+      setSaving((s) => ({ ...s, [appId]: false }));
     }
   }
 
   if (loading) {
     return (
-      <Box className="flex items-center justify-center h-64">
-        <CircularProgress />
+      <Box
+        sx={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+        }}
+      >
+        <Fade in={loading}>
+          <Paper
+            elevation={24}
+            sx={{
+              p: 6,
+              borderRadius: 4,
+              textAlign: 'center',
+              background: 'rgba(255,255,255,0.95)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <CircularProgress size={60} thickness={4} />
+            <Typography variant="h6" sx={{ mt: 3, fontWeight: 600 }}>
+              Loading Applicants...
+            </Typography>
+          </Paper>
+        </Fade>
       </Box>
     );
   }
 
   return (
-    <Box className="max-w-6xl mx-auto py-6">
-      <Card className="shadow-xl">
-        <CardContent>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-            <Typography variant="h5" fontWeight={800}>Applicants</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Total: {rows.length}
-            </Typography>
-          </Stack>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        py: 4,
+      }}
+    >
+      <Box sx={{ maxWidth: 1200, mx: 'auto', px: 2 }}>
+        {/* Header Section */}
+        <Slide direction="down" in timeout={800}>
+          <Box sx={{ mb: 4 }}>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
+              <Avatar
+                sx={{
+                  bgcolor: 'primary.main',
+                  width: 56,
+                  height: 56,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                }}
+              >
+                <Person fontSize="large" />
+              </Avatar>
+              <Box>
+                <Typography
+                  variant="h4"
+                  fontWeight={800}
+                  sx={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    backgroundClip: 'text',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}
+                >
+                  Applicant Management
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary" fontWeight={500}>
+                  Review and manage job applications efficiently
+                </Typography>
+              </Box>
+            </Stack>
 
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Applicant</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Job</TableCell>
-                <TableCell>Applied</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Action</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((r) => (
-                <TableRow key={r.id} hover>
-                  <TableCell>{r.user?.name || '—'}</TableCell>
-                  <TableCell>{r.user?.email || '—'}</TableCell>
-                  <TableCell>{r.job?.title || '—'}</TableCell>
-                  <TableCell>{new Date(r.appliedAt).toLocaleString()}</TableCell>
-                  <TableCell>
-                    <Select
-                      size="small"
-                      value={editStatus[r.id] ?? enumToStatusDisplay[r.status] ?? 'Pending'}
-                      onChange={(e) =>
-                        setEditStatus((s) => ({ ...s, [r.id]: e.target.value as string }))
-                      }
-                      sx={{ minWidth: 160 }}
-                    >
-                      <MenuItem value="Pending">Pending</MenuItem>
-                      <MenuItem value="Rejected">Rejected</MenuItem>
-                      <MenuItem value="Selected">Selected</MenuItem>
-                    </Select>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Button
-                      variant="contained"
-                      onClick={() => confirmUpdate(r.id)}
-                      disabled={saving[r.id] === true}
-                    >
-                      {saving[r.id] ? 'Updating…' : 'Confirm'}
-                    </Button>
-                  </TableCell>
-                </TableRow>
+            {/* Stats Cards */}
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={3}>
+              {[
+                { label: 'Total Applications', value: stats.total, color: '#667eea', icon: TrendingUp },
+                { label: 'Pending Review', value: stats.pending, color: '#FF9800', icon: Schedule },
+                { label: 'Accepted', value: stats.accepted, color: '#4CAF50', icon: CheckCircle },
+                { label: 'Rejected', value: stats.rejected, color: '#F44336', icon: Cancel },
+              ].map((stat, index) => (
+                <Grow key={stat.label} in timeout={1000 + index * 200}>
+                  <Card
+                    elevation={8}
+                    sx={{
+                      flex: 1,
+                      background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)',
+                      border: `2px solid ${alpha(stat.color, 0.1)}`,
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: theme.shadows[16],
+                        borderColor: alpha(stat.color, 0.3),
+                      },
+                    }}
+                  >
+                    <CardContent>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Avatar
+                          sx={{
+                            bgcolor: alpha(stat.color, 0.1),
+                            color: stat.color,
+                            width: 48,
+                            height: 48,
+                          }}
+                        >
+                          <stat.icon />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="h5" fontWeight={800} color={stat.color}>
+                            {stat.value}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                            {stat.label}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </Card>
+                </Grow>
               ))}
-              {rows.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <Typography color="text.secondary">No applicants yet.</Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </Stack>
+          </Box>
+        </Slide>
 
+        {/* Main Table */}
+        <Slide direction="up" in timeout={1000}>
+          <Card
+            elevation={16}
+            sx={{
+              borderRadius: 3,
+              overflow: 'hidden',
+              background: 'linear-gradient(135deg, #fff 0%, #f8fafc 100%)',
+              border: '1px solid rgba(255,255,255,0.2)',
+            }}
+          >
+            <CardContent sx={{ p: 0 }}>
+              <Box
+                sx={{
+                  p: 3,
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                }}
+              >
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                  <Typography variant="h6" fontWeight={700} color="white">
+                    All Applicants ({visibleRows.length})
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {searchOpen && (
+                      <TextField
+                        size="small"
+                        autoFocus
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search by name, email, position"
+                        sx={{
+                          minWidth: { xs: 180, sm: 260 },
+                          bgcolor: 'white',
+                          borderRadius: 2,
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          },
+                        }}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Search fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    )}
+                    <Tooltip title={searchOpen ? 'Close search' : 'Search'}>
+                      <IconButton
+                        onClick={() => {
+                          if (searchOpen) setSearchQuery('');
+                          setSearchOpen((s) => !s);
+                        }}
+                        sx={{ color: 'white' }}
+                      >
+                        <Search />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                </Stack>
+              </Box>
+
+              {/* TableContainer to prevent clipping and allow horizontal scroll */}
+              <TableContainer sx={{ width: '100%', overflowX: 'auto' }}>
+                <Table sx={{ minWidth: 1000 }}>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Candidate</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Contact</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Position</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Applied Date</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, fontSize: '0.9rem' }}>Profile</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 700, fontSize: '0.9rem', whiteSpace: 'nowrap' }}>
+                        Actions
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {visibleRows.map((r, index) => {
+                      const cfg = statusConfig[r.status] || statusConfig.PENDING;
+                      const StatusIcon = cfg.icon;
+
+                      const d = r.appliedAt ? new Date(r.appliedAt) : null;
+                      const appliedStr =
+                        d && !isNaN(d.getTime())
+                          ? d.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })
+                          : '—';
+
+                      const currentStatus: Status = editStatus[r.id] ?? r.status ?? 'PENDING';
+
+                      return (
+                        <Fade key={r.id} in timeout={1200 + index * 100}>
+                          <TableRow
+                            hover
+                            sx={{
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              '&:hover': {
+                                bgcolor: alpha(theme.palette.primary.main, 0.02),
+                                transform: 'scale(1.01)',
+                              },
+                            }}
+                          >
+                            <TableCell>
+                              <Stack direction="row" alignItems="center" spacing={2}>
+                                <Avatar
+                                  sx={{
+                                    bgcolor: 'primary.main',
+                                    width: 40,
+                                    height: 40,
+                                    fontSize: '1rem',
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {r.user?.name?.charAt(0) || '?'}
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="body1" fontWeight={600}>
+                                    {r.user?.name || '—'}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    ID: {r.id}
+                                  </Typography>
+                                </Box>
+                              </Stack>
+                            </TableCell>
+
+                            <TableCell>
+                              <Stack direction="row" alignItems="center" spacing={1}>
+                                <Email sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography variant="body2" fontWeight={500}>
+                                  {r.user?.email || '—'}
+                                </Typography>
+                              </Stack>
+                            </TableCell>
+
+                            <TableCell>
+                              <Stack direction="row" alignItems="center" spacing={1}>
+                                <Work sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography variant="body2" fontWeight={500}>
+                                  {r.job?.title || '—'}
+                                </Typography>
+                              </Stack>
+                            </TableCell>
+
+                            <TableCell>
+                              <Stack direction="row" alignItems="center" spacing={1}>
+                                <CalendarToday sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography variant="body2">{appliedStr}</Typography>
+                              </Stack>
+                            </TableCell>
+
+                            <TableCell>
+                              <Chip
+                                icon={<StatusIcon sx={{ fontSize: 16 }} />}
+                                label={cfg.label}
+                                sx={{
+                                  bgcolor: cfg.bgColor,
+                                  color: cfg.color,
+                                  fontWeight: 600,
+                                  fontSize: '0.75rem',
+                                  height: 28,
+                                  '& .MuiChip-icon': { color: cfg.color },
+                                }}
+                              />
+                            </TableCell>
+
+                            <TableCell>
+                              {r.user?.id ? (
+                                <Button
+                                  component={Link}
+                                  to={`/profile/${r.user.id}`}
+                                  variant="outlined"
+                                  size="small"
+                                  startIcon={<Visibility />}
+                                  sx={{
+                                    borderRadius: 2,
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    transition: 'all 0.2s',
+                                    '&:hover': {
+                                      transform: 'scale(1.05)',
+                                    },
+                                  }}
+                                >
+                                  View
+                                </Button>
+                              ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                  —
+                                </Typography>
+                              )}
+                            </TableCell>
+
+                            <TableCell align="right">
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                                justifyContent="flex-end"
+                                sx={{ flexWrap: 'wrap', rowGap: 1 }}
+                              >
+                                <Select
+                                  size="small"
+                                  value={currentStatus}
+                                  onChange={(e) =>
+                                    setEditStatus((s) => ({
+                                      ...s,
+                                      [r.id]: (e.target.value as Status) || 'PENDING',
+                                    }))
+                                  }
+                                  sx={{
+                                    minWidth: 140,
+                                    borderRadius: 2,
+                                    '& .MuiOutlinedInput-notchedOutline': {
+                                      borderColor: alpha(theme.palette.primary.main, 0.2),
+                                    },
+                                  }}
+                                >
+                                  {/* Hidden Reviewed option to avoid MUI warning if current is REVIEWED */}
+                                  {currentStatus === 'REVIEWED' && (
+                                    <MenuItem value="REVIEWED" sx={{ display: 'none' }}>
+                                      {STATUS_LABEL.REVIEWED}
+                                    </MenuItem>
+                                  )}
+                                  {STATUS_OPTIONS.map((opt) => (
+                                    <MenuItem key={opt.value} value={opt.value}>
+                                      {opt.label}
+                                    </MenuItem>
+                                  ))}
+                                </Select>
+
+                                <Button
+                                  variant="contained"
+                                  onClick={() => confirmUpdate(r.id)}
+                                  disabled={saving[r.id] === true}
+                                  sx={{
+                                    borderRadius: 2,
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    minWidth: { xs: 96, sm: 100 },
+                                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                    transition: 'all 0.2s',
+                                    '&:hover': {
+                                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                                      transform: 'scale(1.05)',
+                                    },
+                                    '&:disabled': {
+                                      background: alpha(theme.palette.action.disabled, 0.12),
+                                    },
+                                  }}
+                                >
+                                  {saving[r.id] ? 'Updating…' : 'Update'}
+                                </Button>
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        </Fade>
+                      );
+                    })}
+
+                    {visibleRows.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+                          <Box>
+                            <Avatar
+                              sx={{
+                                bgcolor: 'grey.100',
+                                width: 80,
+                                height: 80,
+                                mx: 'auto',
+                                mb: 2,
+                              }}
+                            >
+                              <Person sx={{ fontSize: 40, color: 'grey.400' }} />
+                            </Avatar>
+                            <Typography variant="h6" color="text.secondary" gutterBottom>
+                              No applicants found
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              Try a different search term or clear the search
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
+        </Slide>
+      </Box>
+
+      {/* Enhanced Toast Notification */}
       <Snackbar
         open={toast.open}
-        autoHideDuration={3000}
-        onClose={() => setToast(s => ({ ...s, open: false }))}
+        autoHideDuration={4000}
+        onClose={() => setToast((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        TransitionComponent={Slide}
       >
         <Alert
-          onClose={() => setToast(s => ({ ...s, open: false }))}
+          onClose={() => setToast((s) => ({ ...s, open: false }))}
           severity={toast.severity}
           variant="filled"
-          sx={{ width: '100%' }}
+          sx={{
+            width: '100%',
+            borderRadius: 2,
+            fontWeight: 600,
+            '& .MuiAlert-icon': {
+              fontSize: 24,
+            },
+          }}
         >
           {toast.message}
         </Alert>

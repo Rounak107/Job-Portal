@@ -45,10 +45,19 @@ model User {
   updatedAt   DateTime            @updatedAt
   loginCount  Int                 @default(0)
 
+  bio         String?
+  phone       String?
+  location    String?
+  skills      String?   // comma-separated list (simple & enough for now)
+  experience  String?   // free-text experience summary
+  education   String?   // free-text education summary
+  profilePic  String?   // URL path to uploaded avatar
+  resumeUrl   String?   // URL path to user-level resume
+
   jobs         Job[]              @relation("PostedJobs")
   applications Application[]
   audits       ApplicationAudit[] @relation("AuditChangedBy")
-  jobViews     JobView[]          // 👈 opposite relation for JobView.user
+  jobViews     JobView[]
 }
 
 model Job {
