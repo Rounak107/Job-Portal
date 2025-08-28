@@ -23,10 +23,13 @@ frontend/dist/
 frontend/.cache/
 frontend/.next/
 frontend/out/
+/frontend/.env.docker
 
 # --- Backend builds (if any) ---
 backend/dist/
 backend/build/
+/backend/.env.docker
+/backend/.env
 
 # --- Coverage & temporary ---
 coverage/
