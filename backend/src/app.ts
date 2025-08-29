@@ -16,7 +16,7 @@ const app = express();
 
 // allow frontend dev origins (adjust as needed)
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'], // vite default 5173, CRA 3000
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://job-portal-frontend.onrender.com'], // vite default 5173, CRA 3000
   credentials: true,
 }));
 
