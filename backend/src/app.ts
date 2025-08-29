@@ -15,11 +15,23 @@ dotenv.config(); // Load .env
 const app = express();
 
 
-const allowedOrigins = (process.env.FRONTEND_URLS || 'http://localhost:5173').split(',').map(o => o.trim());
+const allowedOrigins = (process.env.FRONTEND_URLS || 'http://localhost:5173')
+  .split(',')
+  .map(o => o.trim());
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      // If no origin (like Postman, curl), allow it
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        console.warn(`❌ Blocked by CORS: ${origin}`);
+        return callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
