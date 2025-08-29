@@ -14,11 +14,20 @@ dotenv.config(); // Load .env
 
 const app = express();
 
+
+const allowedOrigins = (process.env.FRONTEND_URLS || 'http://localhost:5173').split(',').map(o => o.trim());
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 // allow frontend dev origins (adjust as needed)
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://job-portal-frontend.onrender.com'], // vite default 5173, CRA 3000
-  credentials: true,
-}));
+// app.use(cors({
+//   origin: ['http://localhost:5173', 'http://localhost:3000', 'https://job-portal-frontend.onrender.com'], // vite default 5173, CRA 3000
+//   credentials: true,
+// }));
 
 app.use(morgan('dev'));
 app.use(express.json());
