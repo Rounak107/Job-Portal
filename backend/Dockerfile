@@ -1,10 +1,21 @@
 # backend/Dockerfile (prod)
 FROM node:22-alpine AS builder
 WORKDIR /app
+
+# copy package files and install (including dev deps - needed for prisma & tsc)
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
+
+# copy everything
 COPY . .
+
+# Generate Prisma client BEFORE TypeScript build so @prisma/client exports exist
+# (prisma CLI is available because dev deps installed)
+RUN npx prisma generate
+
+# Build TypeScript
 RUN npm run build
+
 
 FROM node:22-alpine
 WORKDIR /app
