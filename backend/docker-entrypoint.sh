@@ -1,35 +1,33 @@
 #!/bin/sh
 set -e
 
-# --- Parse DB host/port ---
-PARSED_HOST=""
-PARSED_PORT=""
+# --- Parse DB host/port WITHOUT touching PORT (Render sets PORT for the web service) ---
+PARSED_DB_HOST=""
+PARSED_DB_PORT=""
 
 if [ -n "$DATABASE_URL" ]; then
   # Extract host (between @ and : or /)
-  PARSED_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+).*|\1|')
-  # Extract port (digits after : before /). If not present, will be empty
-  PARSED_PORT=$(echo "$DATABASE_URL" | sed -E 's|.*:([0-9]+)/.*|\1|')
+  PARSED_DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|.*@([^:/]+).*|\1|')
+  # Extract port (digits after : before /)
+  PARSED_DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|.*:([0-9]+)/.*|\1|')
 fi
 
-# Allow explicit overrides
-HOST=${DB_HOST:-$PARSED_HOST}
-PORT=${DB_PORT:-$PARSED_PORT}
-PORT=${PORT:-5432}   # fallback
+DBHOST=${DB_HOST:-$PARSED_DB_HOST}
+DBPORT=${DB_PORT:-$PARSED_DB_PORT}
+DBPORT=${DBPORT:-5432}  # default for Postgres
 
-if [ -z "$HOST" ]; then
+if [ -z "$DBHOST" ]; then
   echo "❌ ERROR: Could not determine DB host. Set DATABASE_URL or DB_HOST."
   exit 1
 fi
 
-# --- Wait for DB to be ready ---
-echo "⏳ Waiting for DB at $HOST:$PORT ..."
+echo "⏳ Waiting for DB at $DBHOST:$DBPORT ..."
 RETRIES=30
 COUNT=0
-until nc -z "$HOST" "$PORT" >/dev/null 2>&1; do
+until nc -z "$DBHOST" "$DBPORT" >/dev/null 2>&1; do
   COUNT=$((COUNT+1))
   if [ $COUNT -ge $RETRIES ]; then
-    echo "❌ ERROR: Could not connect to DB at $HOST:$PORT after $RETRIES attempts."
+    echo "❌ ERROR: Could not connect to DB at $DBHOST:$DBPORT after $RETRIES attempts."
     exit 1
   fi
   echo "DB not ready, sleeping 2s..."
@@ -37,18 +35,14 @@ until nc -z "$HOST" "$PORT" >/dev/null 2>&1; do
 done
 echo "✅ DB is reachable."
 
-# --- Run Prisma migrations & generate client ---
 echo "🚀 Running Prisma migrate deploy..."
 npx prisma migrate deploy --schema=./prisma/schema.prisma
 
 echo "⚡ Generating Prisma client..."
 npx prisma generate
 
-# --- Start app ---
-if [ -f dist/server.js ]; then
-  echo "▶️ Starting built server..."
-  exec node dist/server.js
-else
-  echo "▶️ Built server not found — running npm run dev"
-  exec npm run dev
-fi
+# IMPORTANT: do NOT set/modify PORT here. Render provides PORT (e.g., 10000).
+echo "🌐 App will bind to PORT=${PORT:-<not-set>}"
+
+# Start app
+exec node dist/server.js
