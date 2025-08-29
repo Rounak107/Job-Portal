@@ -24,12 +24,14 @@ frontend/.cache/
 frontend/.next/
 frontend/out/
 /frontend/.env.docker
+frontend/.env*
 
 # --- Backend builds (if any) ---
 backend/dist/
 backend/build/
 /backend/.env.docker
 /backend/.env
+backend/.env*
 
 # --- Coverage & temporary ---
 coverage/

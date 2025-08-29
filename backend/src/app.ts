@@ -43,4 +43,9 @@ app.use("/api", testEmailRoutes);
 
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+// 👇 ADD THIS BLOCK anywhere after middlewares but before app.listen
+app.get('/api/health', (_req, res) => {
+  res.json({ ok: true, status: 'up' });
+});
+
 export default app;
