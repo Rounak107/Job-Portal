@@ -331,11 +331,11 @@ type ExperienceItem = {
 };
 
 const initialEdu: EduState = { tenth: '', twelfth: '', graduation: '', postGraduation: '' };
-const SERVER_ORIGIN = (import.meta.env.VITE_SERVER_URL as string) || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 function assetUrl(path?: string | null) {
   if (!path) return undefined;
-  if (path.startsWith('/uploads/')) return `${SERVER_ORIGIN}${path}`;
+  if (path.startsWith('/uploads/')) return `${API_BASE}${path}`;
   return path;
 }
 

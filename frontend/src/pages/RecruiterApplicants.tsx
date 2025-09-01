@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { api } from '../api'; 
 import {
   Box,
   Card,
@@ -44,7 +45,7 @@ import {
   Search,
 } from '@mui/icons-material';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 type Status = 'PENDING' | 'REJECTED' | 'REVIEWED' | 'ACCEPTED';
 
@@ -173,71 +174,79 @@ export default function RecruiterApplicants() {
   }, [rows, searchQuery]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(`${API_BASE}/api/applications/recruiter/applicants`, {
-          headers: authHeaders,
-          cache: 'no-store',
-        });
-        if (!res.ok) throw new Error(`Failed to load applicants (${res.status})`);
-        const data = await res.json().catch(() => ({}));
-
-        const list = Array.isArray(data.applicants) ? data.applicants : Array.isArray(data.items) ? data.items : [];
-        const applicants: ApplicantRow[] = list.map((a: any) => ({
-          id: Number(a.id),
-          status: normalizeStatus(a.status),
-          appliedAt: a.appliedAt || a.createdAt || '',
-          resumeUrl: a.resumeUrl ?? null,
-          user: a.user ?? null,
-          job: a.job ?? null,
-        }));
-
-        setRows(applicants);
-        const init: Record<number, Status> = {};
-        applicants.forEach((r) => {
-          init[r.id] = r.status;
-        });
-        setEditStatus(init);
-      } catch (e: any) {
-        console.error(e);
-        setToast({ open: true, message: e?.message || 'Failed to load applicants', severity: 'error' });
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [authHeaders]);
-
-  async function confirmUpdate(appId: number) {
+  (async () => {
     try {
-      const next = editStatus[appId] || 'PENDING';
-      setSaving((s) => ({ ...s, [appId]: true }));
+      setLoading(true);
 
-      const res = await fetch(`${API_BASE}/api/applications/applications/${appId}/status`, {
-        method: 'PATCH',
-        headers: authHeaders,
-        body: JSON.stringify({ status: next }),
+      // ✅ Axios call instead of fetch + headers
+      const { data } = await api.get('/applications/recruiter/applicants');
+
+      // ✅ Data transformation stays the same
+      const list = Array.isArray(data.applicants)
+        ? data.applicants
+        : Array.isArray(data.items)
+        ? data.items
+        : [];
+
+      const applicants: ApplicantRow[] = list.map((a: any) => ({
+        id: Number(a.id),
+        status: normalizeStatus(a.status),
+        appliedAt: a.appliedAt || a.createdAt || '',
+        resumeUrl: a.resumeUrl ?? null,
+        user: a.user ?? null,
+        job: a.job ?? null,
+      }));
+
+      setRows(applicants);
+
+      const init: Record<number, Status> = {};
+      applicants.forEach((r) => {
+        init[r.id] = r.status;
       });
+      setEditStatus(init);
 
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j?.message || `Update failed (${res.status})`);
-      }
-
-      setRows((prev) => prev.map((r) => (r.id === appId ? { ...r, status: next } : r)));
-
-      setToast({
-        open: true,
-        message: 'Status updated and email sent.',
-        severity: 'success',
-      });
     } catch (e: any) {
       console.error(e);
-      setToast({ open: true, message: e?.message || 'Failed to update status', severity: 'error' });
+      setToast({
+        open: true,
+        message: e?.message || 'Failed to load applicants',
+        severity: 'error',
+      });
     } finally {
-      setSaving((s) => ({ ...s, [appId]: false }));
+      setLoading(false);
     }
+  })();
+}, []);   // 👈 no need for authHeaders dependency anymore
+
+  async function confirmUpdate(appId: number) {
+  try {
+    const next = editStatus[appId] || 'PENDING';
+    setSaving((s) => ({ ...s, [appId]: true }));
+
+    // ✅ Use axios.patch instead of fetch
+    await api.patch(`/applications/applications/${appId}/status`, { status: next });
+
+    // ✅ Update UI state
+    setRows((prev) =>
+      prev.map((r) => (r.id === appId ? { ...r, status: next } : r))
+    );
+
+    setToast({
+      open: true,
+      message: 'Status updated and email sent.',
+      severity: 'success',
+    });
+  } catch (e: any) {
+    console.error(e);
+    setToast({
+      open: true,
+      message: e?.message || 'Failed to update status',
+      severity: 'error',
+    });
+  } finally {
+    setSaving((s) => ({ ...s, [appId]: false }));
   }
+}
 
   if (loading) {
     return (
