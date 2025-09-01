@@ -11,4 +11,6 @@ import { setAuthToken } from './api';
 const token = localStorage.getItem('jobportal_token');
 setAuthToken(token);
 
+console.log('VITE_API_BASE (compiled):', import.meta.env.VITE_API_BASE);
+
 createRoot(document.getElementById('root')!).render(<App />);

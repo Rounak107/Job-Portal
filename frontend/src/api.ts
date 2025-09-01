@@ -1,11 +1,11 @@
 // frontend/src/api.ts
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? '/api'; 
+const API_BASE = import.meta.env.VITE_API_BASE;
 
-export const api = axios.create({
+const api = axios.create({
   baseURL: API_BASE,
-  timeout: 10000,
+  withCredentials: true, // if needed
 });
 
 export function setAuthToken(token: string | null) {
