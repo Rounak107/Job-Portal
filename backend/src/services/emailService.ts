@@ -38,7 +38,7 @@ transporter.verify()
   .catch((e) => logLine(`SMTP VERIFY FAILED: ${e?.message || e}`));
 
 // ----------------- TEMPLATES -----------------
-const templatesDir = path.join(process.cwd(), 'emails', 'templates');
+const templatesDir = path.join(__dirname, '..', '..', 'emails', 'templates');
 const templates: Record<string, Handlebars.TemplateDelegate> = {};
 
 function loadTemplates() {
