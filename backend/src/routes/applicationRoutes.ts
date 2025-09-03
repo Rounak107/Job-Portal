@@ -36,20 +36,19 @@ router.post('/jobs/:id/apply-file', authMiddleware, upload.single('resume'), asy
     const backendBase = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
 const resumePath = `/uploads/${req.file.filename}`; // only relative path
 
-const existing = await prisma.application.findFirst({ where: { jobId, userId } });
-if (existing) return res.status(400).json({ message: 'You already applied to this job.' });
+// const existing = await prisma.application.findFirst({ where: { jobId, userId } });
+// if (existing) return res.status(400).json({ message: 'You already applied to this job.' });
 
 // Save only the relative path
 const application = await prisma.application.create({
-  data: { resumeUrl: resumePath, userId, jobId },
+  data: { resumeUrl: resumePath, userId, jobId }, // ✅ store relative path
   include: {
     user: { select: { id: true, name: true, email: true } },
     job: { include: { postedBy: { select: { id: true, name: true, email: true } } } },
   },
 });
 
-// Generate full URL for emails
-const fullResumeUrl = `${backendBase}${resumePath}`;
+const fullResumeUrl = `${backendBase}${resumePath}`; // ✅ build absolute URL for email
 
 (async () => {
   try {

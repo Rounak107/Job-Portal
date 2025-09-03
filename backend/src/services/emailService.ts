@@ -159,13 +159,17 @@ export function sendWelcomeEmail(to: string, name?: string) {
   });
 }
 
-export function sendApplicantEmail(to: string, jobTitle: string, resumeUrl?: string) {
+export function sendApplicantEmail(
+  to: string,
+  jobTitle: string,
+  resumeUrl?: string
+) {
   const fullResumeUrl = resumeUrl ? `${BACKEND_BASE_URL}${resumeUrl}` : null;
   return enqueueEmail({
     to,
     subject: `Application Received — ${jobTitle}`,
     template: 'applicantReceived',
-    context: { jobTitle, resumeUrl, fullResumeUrl },
+    context: { jobTitle, fullResumeUrl }, // ✅ send only fullResumeUrl
   });
 }
 
@@ -186,13 +190,13 @@ export function sendRecruiterNewApplicationEmail(
   applicantEmail: string,
   resumeUrl?: string
 ) {
-  const fullResumeUrl = resumeUrl ? `${FRONTEND_BASE_URL}${resumeUrl}` : null;
+  const fullResumeUrl = resumeUrl ? `${BACKEND_BASE_URL}${resumeUrl}` : null; // ✅ FIXED
   return enqueueEmail({
     to,
     subject: `New Application — ${jobTitle}`,
     template: 'recruiterNewApplication',
-    context: { jobTitle, applicantName, applicantEmail, fullResumeUrl },
-    maxAttempts: 3
+    context: { jobTitle, applicantName, applicantEmail, fullResumeUrl }, // ✅ use fullResumeUrl
+    maxAttempts: 3,
   });
 }
 
