@@ -42,6 +42,8 @@ const templatesDir = path.join(__dirname, '..', 'emails', 'templates');
 const templates: Record<string, Handlebars.TemplateDelegate> = {};
 
 console.log('Templates directory at runtime:', templatesDir);
+// in emailService.ts after constants
+logLine(`EMAIL BASES -> BACKEND_BASE_URL=${BACKEND_BASE_URL} FRONTEND_BASE_URL=${FRONTEND_BASE_URL}`);
 
 function loadTemplates() {
   try {
