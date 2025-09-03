@@ -33,7 +33,8 @@ router.post('/jobs/:id/apply-file', authMiddleware, upload.single('resume'), asy
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-    const resumeUrl = `/uploads/${req.file.filename}`;
+    const backendBase = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    const resumeUrl = `${backendBase}/uploads/${req.file.filename}`;
 
     const existing = await prisma.application.findFirst({ where: { jobId, userId } });
     if (existing) return res.status(400).json({ message: 'You already applied to this job.' });
