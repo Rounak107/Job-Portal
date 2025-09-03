@@ -33,7 +33,7 @@ router.post('/jobs/:id/apply-file', authMiddleware, upload.single('resume'), asy
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-    const backendBase = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    //const backendBase = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
 const resumePath = `/uploads/${req.file.filename}`; // only relative path
 
 // const existing = await prisma.application.findFirst({ where: { jobId, userId } });
@@ -48,13 +48,13 @@ const application = await prisma.application.create({
   },
 });
 
-const fullResumeUrl = `${backendBase}${resumePath}`; // ✅ build absolute URL for email
+//const fullResumeUrl = `${backendBase}${resumePath}`; // ✅ build absolute URL for email
 
 (async () => {
   try {
     // Send email to applicant
     if (application.user?.email && application.job?.title) {
-      sendApplicantEmail(application.user.email, application.job.title, fullResumeUrl);
+      sendApplicantEmail(application.user.email, application.job.title, resumePath);
     }
 
     // Send email to recruiter
@@ -65,7 +65,7 @@ const fullResumeUrl = `${backendBase}${resumePath}`; // ✅ build absolute URL f
         application.job.title,
         application.user?.name || application.user?.email || 'Applicant',
         application.user?.email || '',
-        fullResumeUrl
+        resumePath
       );
     }
   } catch (e) {
