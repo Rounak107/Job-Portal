@@ -34,38 +34,45 @@ router.post('/jobs/:id/apply-file', authMiddleware, upload.single('resume'), asy
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
     const backendBase = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-    const resumeUrl = `${backendBase}/uploads/${req.file.filename}`; // FULL URL
+const resumePath = `/uploads/${req.file.filename}`; // only relative path
 
-    const existing = await prisma.application.findFirst({ where: { jobId, userId } });
-    if (existing) return res.status(400).json({ message: 'You already applied to this job.' });
+const existing = await prisma.application.findFirst({ where: { jobId, userId } });
+if (existing) return res.status(400).json({ message: 'You already applied to this job.' });
 
-    const application = await prisma.application.create({
-      data: { resumeUrl, userId, jobId }, // store FULL URL now
-      include: {
-        user: { select: { id: true, name: true, email: true } },
-        job: { include: { postedBy: { select: { id: true, name: true, email: true } } } },
-      },
-    });
+// Save only the relative path
+const application = await prisma.application.create({
+  data: { resumeUrl: resumePath, userId, jobId },
+  include: {
+    user: { select: { id: true, name: true, email: true } },
+    job: { include: { postedBy: { select: { id: true, name: true, email: true } } } },
+  },
+});
 
-    (async () => {
-      try {
-        if (application.user?.email && application.job?.title) {
-          sendApplicantEmail(application.user.email, application.job.title, resumeUrl);
-        }
-        const recruiterEmail = application.job?.postedBy?.email;
-        if (recruiterEmail) {
-          sendRecruiterNewApplicationEmail(
-            recruiterEmail,
-            application.job.title,
-            application.user?.name || application.user?.email || 'Applicant',
-            application.user?.email || '',
-            resumeUrl
-          );
-        }
-      } catch (e) {
-        console.error('background email failed', e);
-      }
-    })();
+// Generate full URL for emails
+const fullResumeUrl = `${backendBase}${resumePath}`;
+
+(async () => {
+  try {
+    // Send email to applicant
+    if (application.user?.email && application.job?.title) {
+      sendApplicantEmail(application.user.email, application.job.title, fullResumeUrl);
+    }
+
+    // Send email to recruiter
+    const recruiterEmail = application.job?.postedBy?.email;
+    if (recruiterEmail) {
+      sendRecruiterNewApplicationEmail(
+        recruiterEmail,
+        application.job.title,
+        application.user?.name || application.user?.email || 'Applicant',
+        application.user?.email || '',
+        fullResumeUrl
+      );
+    }
+  } catch (e) {
+    console.error('background email failed', e);
+  }
+})();
 
     res.status(201).json(application);
   } catch (err: any) {
