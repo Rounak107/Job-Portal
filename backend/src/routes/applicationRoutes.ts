@@ -34,28 +34,23 @@ router.post('/jobs/:id/apply-file', authMiddleware, upload.single('resume'), asy
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
     const backendBase = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-    const resumeUrl = `${backendBase}/uploads/${req.file.filename}`;
+    const resumeUrl = `${backendBase}/uploads/${req.file.filename}`; // FULL URL
 
     const existing = await prisma.application.findFirst({ where: { jobId, userId } });
     if (existing) return res.status(400).json({ message: 'You already applied to this job.' });
 
     const application = await prisma.application.create({
-      data: { resumeUrl, userId, jobId },
+      data: { resumeUrl, userId, jobId }, // store FULL URL now
       include: {
         user: { select: { id: true, name: true, email: true } },
-        job: {
-          include: {
-            postedBy: { select: { id: true, name: true, email: true } },
-          },
-        },
+        job: { include: { postedBy: { select: { id: true, name: true, email: true } } } },
       },
     });
 
-    // fire emails in background
     (async () => {
       try {
         if (application.user?.email && application.job?.title) {
-          sendApplicantEmail(application.user.email, application.job.title, application.resumeUrl);
+          sendApplicantEmail(application.user.email, application.job.title, resumeUrl);
         }
         const recruiterEmail = application.job?.postedBy?.email;
         if (recruiterEmail) {
@@ -64,7 +59,7 @@ router.post('/jobs/:id/apply-file', authMiddleware, upload.single('resume'), asy
             application.job.title,
             application.user?.name || application.user?.email || 'Applicant',
             application.user?.email || '',
-            application.resumeUrl
+            resumeUrl
           );
         }
       } catch (e) {
