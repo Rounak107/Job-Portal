@@ -1,4 +1,3 @@
-// frontend/src/pages/RecruiterDashboard.tsx
 import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../auth/AuthProvider';
@@ -332,148 +331,64 @@ export default function RecruiterDashboard() {
     </Stack>
   ));
 
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
-      <DashboardContainer maxWidth="xl">
-        {/* Header */}
-        <Fade in timeout={700}>
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="h3" fontWeight={800} color="primary.main" gutterBottom>
-              Recruiter Dashboard
-            </Typography>
-            <Typography variant="h6" color="text.secondary">
-              {profile?.name ? `Welcome back, ${profile.name}` : 'Welcome to your recruitment hub'}
+  // Insights Section Component
+  const InsightsSection = React.memo(() => (
+    <StyledCard>
+      <CardContent sx={{ p: 2 }}>
+        <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+          <AnalyticsIcon color="primary" />
+          <Typography variant="h6" fontWeight={700}>
+            Quick Insights
+          </Typography>
+        </Stack>
+        <Stack spacing={1.25}>
+          <Box sx={{ p: 1.25, borderRadius: 2, bgcolor: 'success.light', color: 'success.contrastText' }}>
+            <Typography variant="body2" fontWeight={600}>
+              Avg. applications per job: {jobs.length > 0 ? Math.round((stats?.totalApplications || 0) / jobs.length) : 0}
             </Typography>
           </Box>
-        </Fade>
+          <Box sx={{ p: 1.25, borderRadius: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
+            <Typography variant="body2" fontWeight={600}>
+              Avg. views per job: {jobs.length > 0 ? Math.round((stats?.totalViews || 0) / jobs.length) : 0}
+            </Typography>
+          </Box>
+          <Box sx={{ p: 1.25, borderRadius: 2, bgcolor: 'warning.light', color: 'warning.contrastText' }}>
+            <Typography variant="body2" fontWeight={600}>
+              Conversion rate: {stats?.totalViews ? (((stats?.totalApplications || 0) / stats.totalViews) * 100).toFixed(1) : 0}%
+            </Typography>
+          </Box>
+        </Stack>
+      </CardContent>
+    </StyledCard>
+  ));
 
-        {/* Main Content Grid */}
-        <Grid container spacing={2}>
-          {/* Left Column - Profile and Stats */}
-          <Grid item xs={12} lg={8}>
-            <Stack spacing={1.5}>
-              {/* Profile Card */}
-              <motion.div initial={{ x: -40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.5 }}>
-                <ProfileCard>
-                  <CardContent sx={{ p: 3 }}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
-                      <GlowingAvatar>
-                        {(profile?.name || 'R').charAt(0).toUpperCase()}
-                      </GlowingAvatar>
-                      <Box flex={1} sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
-                        <Typography variant="h5" fontWeight={700} gutterBottom>
-                          {profile?.name || 'Recruiter'}
-                        </Typography>
-                        <Typography variant="body1" sx={{ opacity: 0.9, mb: 1 }}>
-                          {profile?.email}
-                        </Typography>
-                        <Chip
-                          label={`${stats?.jobCount ?? 0} Active Jobs`}
-                          sx={{
-                            bgcolor: 'rgba(255,255,255,0.2)',
-                            color: 'white',
-                            fontWeight: 600
-                          }}
-                        />
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </ProfileCard>
-              </motion.div>
-
-              {/* Quick Actions (mobile-only) */}
-              {isMobile && (
-                <Box>
-                  <Typography variant="h6" fontWeight={700} gutterBottom>
-                    Quick Actions
-                  </Typography>
-                  <QuickActions />
-                </Box>
-              )}
-
-              {/* Stats Grid */}
-              <Grid container spacing={1.5}>
-                {[
-                  { title: 'Jobs Posted', value: stats?.jobCount ?? 0, icon: WorkIcon, color: '#1976d2' },
-                  { title: 'Total Views', value: stats?.totalViews ?? 0, icon: VisibilityIcon, color: '#4caf50' },
-                  { title: 'Applications', value: stats?.totalApplications ?? 0, icon: PeopleOutlineIcon, color: '#ff6f00' },
-                  { title: 'Login Sessions', value: stats?.loginCount ?? 0, icon: LoginIcon, color: '#9c27b0' }
-                ].map((stat, index) => (
-                  <Grid item xs={6} sm={3} key={stat.title}>
-                    <motion.div
-                      initial={{ y: 30, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.45, delay: index * 0.08 }}
-                    >
-                      <StatCard>
-                        <CardContent sx={{ textAlign: 'center', p: 1.75 }}>
-                          <Box sx={{
-                            width: 46,
-                            height: 46,
-                            borderRadius: '50%',
-                            bgcolor: stat.color,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            mx: 'auto',
-                            mb: 1.25
-                          }}>
-                            <stat.icon sx={{ color: 'white', fontSize: 22 }} />
-                          </Box>
-                          <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ lineHeight: 1 }}>
-                            <CountUp end={Number(stat.value) || 0} duration={1.4} />
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                            {stat.title}
-                          </Typography>
-                        </CardContent>
-                      </StatCard>
-                    </motion.div>
-                  </Grid>
-                ))}
-              </Grid>
-            </Stack>
-          </Grid>
-
-          {/* Right Column - Quick Actions, Top Jobs, Insights (desktop only) */}
-          {!isMobile && (
-            <Grid item xs={12} lg={4}>
-              <Stack spacing={1.5} sx={{ position: 'sticky', top: 16 }}>
-                {/* Quick Actions */}
-                <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.15 }}>
-                  <Typography variant="h6" fontWeight={700} gutterBottom>
-                    Quick Actions
-                  </Typography>
-                  <QuickActions />
-                </motion.div>
-
-                {/* Top Performing Jobs */}
-                <motion.div initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.3 }}>
-                  <StyledCard>
-                    <CardContent sx={{ p: 2 }}>
-                      <Typography variant="h6" fontWeight={700} gutterBottom>
-                        Top Performing Jobs
-                      </Typography>
-                      {topPerformingJobs.length === 0 ? (
-                        <Typography color="text.secondary" sx={{ py: 1 }}>
-                          No job performance data yet
-                        </Typography>
-                      ) : (
-                        <Stack spacing={1.25}>
-                          {topPerformingJobs.map((job, index) => (
-                            <motion.div
-                              key={job.id}
-                              initial={{ opacity: 0, y: 16 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.08 }}
-                            >
-                              <Box sx={{
-                                p: 1.25,
-                                borderRadius: 2,
-                                bgcolor: 'action.hover',
-                                border: '1px solid',
-                                borderColor: 'divider'
-                              }}>
+  // Top Performing Jobs Component
+  const TopJobsSection = React.memo(() => (
+    <StyledCard>
+      <CardContent sx={{ p: 2 }}>
+        <Typography variant="h6" fontWeight={700} gutterBottom>
+          Top Performing Jobs
+        </Typography>
+        {topPerformingJobs.length === 0 ? (
+          <Typography color="text.secondary" sx={{ py: 1 }}>
+            No job performance data yet
+          </Typography>
+        ) : (
+          <Stack spacing={1.25}>
+            {topPerformingJobs.map((job, index) => (
+              <motion.div
+                key={job.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.08 }}
+              >
+                <Box sx={{
+                  p: 1.25,
+                  borderRadius: 2,
+                  bgcolor: 'action.hover',
+                  border: '1px solid',
+                  borderColor: 'divider'
+                }}>
                                 <Typography variant="body1" fontWeight={600} gutterBottom>
                                   {job.title}
                                 </Typography>
