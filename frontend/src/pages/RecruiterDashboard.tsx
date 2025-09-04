@@ -4,74 +4,34 @@ import { api } from '../api';
 import { useAuth } from '../auth/AuthProvider';
 import { Link as RouterLink } from 'react-router-dom';
 import CountUp from 'react-countup';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { motion } from 'framer-motion';
 import {
-  Box, Paper, Typography, Avatar, Button, Grid, CircularProgress, Divider,
-  Card, CardContent, IconButton, Chip, Table, TableBody, TableCell, TableContainer, 
-  TableHead, TableRow, LinearProgress, Container, Stack, Fade, Grow, Slide
+  Box, Typography, Avatar, Button, Grid, CircularProgress,
+  Card, CardContent, Chip, Table, TableBody, TableCell, TableContainer, 
+  TableHead, TableRow, LinearProgress, Container, Stack, Fade
 } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkIcon from '@mui/icons-material/Work';
 import LoginIcon from '@mui/icons-material/Login';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
-import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
-import PersonIcon from '@mui/icons-material/Person';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
 // Styled components with animations
 const pulse = keyframes`
-  0% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.7);
-  }
-  70% {
-    transform: scale(1.02);
-    box-shadow: 0 0 0 10px rgba(25, 118, 210, 0);
-  }
-  100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(25, 118, 210, 0);
-  }
-`;
-
-const fadeInUp = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
-
-const shimmer = keyframes`
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 118, 210, 0.7); }
+  70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(25, 118, 210, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(25, 118, 210, 0); }
 `;
 
 const gradientShift = keyframes`
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 `;
 
 const DashboardContainer = styled(Container)(({ theme }) => ({
@@ -79,7 +39,7 @@ const DashboardContainer = styled(Container)(({ theme }) => ({
   backgroundSize: '400% 400%',
   animation: `${gradientShift} 15s ease infinite`,
   minHeight: '100vh',
-  // Reduced top padding to minimize extra vertical space while accounting for AppBar height
+  // Keep top padding minimal but safe for AppBar height
   paddingTop: `calc(56px + ${theme.spacing(1)})`,
   [theme.breakpoints.up('sm')]: {
     paddingTop: `calc(64px + ${theme.spacing(1)})`,
@@ -99,23 +59,11 @@ const StyledCard = styled(Card)(({ theme }) => ({
   }
 }));
 
-const StatCard = styled(StyledCard)(({ theme }) => ({
+const StatCard = styled(StyledCard)({
   position: 'relative',
   overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: '-100%',
-    width: '100%',
-    height: '100%',
-    background: `linear-gradient(90deg, transparent, ${theme.palette.primary.main}20, transparent)`,
-    transition: 'left 0.5s',
-  },
-  '&:hover::before': {
-    left: '100%',
-  }
-}));
+  height: '100%',
+});
 
 const ProfileCard = styled(StyledCard)(({ theme }) => ({
   background: `linear-gradient(135deg, #0a1929ff 0%, #333333 100%)`,
@@ -139,23 +87,15 @@ const ActionCard = styled(Card)(({ theme }) => ({
   }
 }));
 
-const ChartCard = styled(StyledCard)(({ theme }) => ({
-  height: 350,
-  '& .recharts-cartesian-grid-horizontal line': {
-    stroke: theme.palette.divider,
-  },
-  '& .recharts-cartesian-grid-vertical line': {
-    stroke: theme.palette.divider,
-  }
-}));
+const ChartCard = styled(StyledCard)({
+  height: 320, // slightly reduced for tighter layout
+});
 
 const TableCard = styled(StyledCard)(({ theme }) => ({
-  '& .MuiTableHead-root': {
-    '& .MuiTableCell-root': {
-      fontWeight: 700,
-      backgroundColor: theme.palette.action.hover,
-      borderBottom: `2px solid ${theme.palette.primary.main}`,
-    }
+  '& .MuiTableHead-root .MuiTableCell-root': {
+    fontWeight: 700,
+    backgroundColor: theme.palette.action.hover,
+    borderBottom: `2px solid ${theme.palette.primary.main}`,
   },
   '& .MuiTableRow-root': {
     transition: 'all 0.2s ease',
@@ -269,7 +209,6 @@ export default function RecruiterDashboard() {
   const viewsByMonth = data.analytics?.viewsByMonth || [];
   const appsByMonth = data.analytics?.appsByMonth || [];
 
-  // Enhanced analytics data
   const combinedData = viewsByMonth.map((item: any, index: number) => ({
     ...item,
     applications: appsByMonth[index]?.count || 0
@@ -286,11 +225,7 @@ export default function RecruiterDashboard() {
     .slice(0, 3);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
-    >
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>
       <DashboardContainer maxWidth="xl">
         {/* Header */}
         <Fade in timeout={800}>
@@ -307,13 +242,9 @@ export default function RecruiterDashboard() {
         <Grid container spacing={4}>
           {/* Left Column */}
           <Grid item xs={12} lg={8}>
-            <Stack spacing={4}>
+            <Stack spacing={3}>
               {/* Profile Card */}
-              <motion.div
-                initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.6 }}
-              >
+              <motion.div initial={{ x: -50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6 }}>
                 <ProfileCard>
                   <CardContent sx={{ p: 4 }}>
                     <Stack direction="row" spacing={3} alignItems="center">
@@ -341,22 +272,31 @@ export default function RecruiterDashboard() {
                 </ProfileCard>
               </motion.div>
 
-              {/* Stats Grid */}
-              <Grid container spacing={3}>
+              {/* Stats Grid (equal height, no-wrap labels) */}
+              <Grid container spacing={3} alignItems="stretch">
                 {[
                   { title: 'Jobs Posted', value: stats?.jobCount ?? 0, icon: WorkIcon, color: '#1976d2' },
                   { title: 'Total Views', value: stats?.totalViews ?? 0, icon: VisibilityIcon, color: '#4caf50' },
                   { title: 'Applications', value: stats?.totalApplications ?? 0, icon: PeopleOutlineIcon, color: '#ff6f00' },
                   { title: 'Login Sessions', value: stats?.loginCount ?? 0, icon: LoginIcon, color: '#9c27b0' }
                 ].map((stat, index) => (
-                  <Grid item xs={6} md={3} key={stat.title}>
+                  <Grid item xs={6} md={3} key={stat.title} sx={{ display: 'flex' }}>
                     <motion.div
+                      style={{ width: '100%' }}
                       initial={{ y: 50, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ duration: 0.6, delay: index * 0.1 }}
                     >
-                      <StatCard>
-                        <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                      <StatCard sx={{ flex: 1 }}>
+                        <CardContent sx={{ 
+                          textAlign: 'center', 
+                          p: 3, 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          minHeight: { xs: 120, sm: 128, md: 136 } // keep all cards same height
+                        }}>
                           <Box sx={{ 
                             width: 60, 
                             height: 60, 
@@ -373,7 +313,18 @@ export default function RecruiterDashboard() {
                           <Typography variant="h4" fontWeight={800} color="primary.main">
                             <CountUp end={stat.value} duration={2} />
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary" 
+                            fontWeight={600}
+                            noWrap
+                            sx={{ 
+                              width: '100%', 
+                              overflow: 'hidden', 
+                              textOverflow: 'ellipsis', 
+                              whiteSpace: 'nowrap' 
+                            }}
+                          >
                             {stat.title}
                           </Typography>
                         </CardContent>
@@ -386,17 +337,13 @@ export default function RecruiterDashboard() {
               {/* Charts */}
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                  <motion.div
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.4 }}
-                  >
+                  <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }}>
                     <ChartCard>
                       <CardContent sx={{ p: 3, height: '100%' }}>
                         <Typography variant="h6" fontWeight={700} gutterBottom>
                           Views & Applications Trend
                         </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
+                        <ResponsiveContainer width="100%" height={240}>
                           <AreaChart data={combinedData}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
@@ -436,17 +383,13 @@ export default function RecruiterDashboard() {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <motion.div
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.5 }}
-                  >
+                  <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, delay: 0.5 }}>
                     <ChartCard>
                       <CardContent sx={{ p: 3, height: '100%' }}>
                         <Typography variant="h6" fontWeight={700} gutterBottom>
                           Performance Overview
                         </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
+                        <ResponsiveContainer width="100%" height={240}>
                           <PieChart>
                             <Pie
                               data={pieData}
@@ -479,11 +422,7 @@ export default function RecruiterDashboard() {
               </Grid>
 
               {/* Jobs Table */}
-              <motion.div
-                initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-              >
+              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, delay: 0.6 }}>
                 <TableCard>
                   <CardContent sx={{ p: 3 }}>
                     <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -524,11 +463,7 @@ export default function RecruiterDashboard() {
                                   </TableCell>
                                   <TableCell>{job.company}</TableCell>
                                   <TableCell align="center">
-                                    <Chip 
-                                      label={job.applicationsCount} 
-                                      color="primary"
-                                      size="small"
-                                    />
+                                    <Chip label={job.applicationsCount} color="primary" size="small" />
                                   </TableCell>
                                   <TableCell align="center">
                                     <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
@@ -569,11 +504,7 @@ export default function RecruiterDashboard() {
           <Grid item xs={12} lg={4}>
             <Stack spacing={4}>
               {/* Quick Actions */}
-              <motion.div
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
+              <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 0.2 }}>
                 <Typography variant="h6" fontWeight={700} gutterBottom>
                   Quick Actions
                 </Typography>
@@ -613,11 +544,7 @@ export default function RecruiterDashboard() {
               </motion.div>
 
               {/* Top Performing Jobs */}
-              <motion.div
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-              >
+              <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }}>
                 <StyledCard>
                   <CardContent sx={{ p: 3 }}>
                     <Typography variant="h6" fontWeight={700} gutterBottom>
@@ -630,19 +557,8 @@ export default function RecruiterDashboard() {
                     ) : (
                       <Stack spacing={2}>
                         {topPerformingJobs.map((job, index) => (
-                          <motion.div
-                            key={job.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.1 }}
-                          >
-                            <Box sx={{ 
-                              p: 2, 
-                              borderRadius: 2, 
-                              bgcolor: 'action.hover',
-                              border: '1px solid',
-                              borderColor: 'divider'
-                            }}>
+                          <motion.div key={job.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
+                            <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider' }}>
                               <Typography variant="body1" fontWeight={600} gutterBottom>
                                 {job.title}
                               </Typography>
@@ -653,11 +569,7 @@ export default function RecruiterDashboard() {
                                     {job.applicationsCount} applications
                                   </Typography>
                                 </Stack>
-                                <Chip 
-                                  label={`#${index + 1}`} 
-                                  size="small" 
-                                  color="primary"
-                                />
+                                <Chip label={`#${index + 1}`} size="small" color="primary" />
                               </Stack>
                             </Box>
                           </motion.div>
@@ -669,11 +581,7 @@ export default function RecruiterDashboard() {
               </motion.div>
 
               {/* Analytics Insights */}
-              <motion.div
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-              >
+              <motion.div initial={{ x: 50, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.6, delay: 0.6 }}>
                 <StyledCard>
                   <CardContent sx={{ p: 3 }}>
                     <Stack direction="row" alignItems="center" spacing={1} mb={2}>
@@ -683,32 +591,17 @@ export default function RecruiterDashboard() {
                       </Typography>
                     </Stack>
                     <Stack spacing={2}>
-                      <Box sx={{ 
-                        p: 2, 
-                        borderRadius: 2, 
-                        bgcolor: 'success.light',
-                        color: 'success.contrastText'
-                      }}>
+                      <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'success.light', color: 'success.contrastText' }}>
                         <Typography variant="body2" fontWeight={600}>
                           Average applications per job: {jobs.length > 0 ? Math.round((stats?.totalApplications || 0) / jobs.length) : 0}
                         </Typography>
                       </Box>
-                      <Box sx={{ 
-                        p: 2, 
-                        borderRadius: 2, 
-                        bgcolor: 'info.light',
-                        color: 'info.contrastText'
-                      }}>
+                      <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'info.light', color: 'info.contrastText' }}>
                         <Typography variant="body2" fontWeight={600}>
                           Average views per job: {jobs.length > 0 ? Math.round((stats?.totalViews || 0) / jobs.length) : 0}
                         </Typography>
                       </Box>
-                      <Box sx={{ 
-                        p: 2, 
-                        borderRadius: 2, 
-                        bgcolor: 'warning.light',
-                        color: 'warning.contrastText'
-                      }}>
+                      <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'warning.light', color: 'warning.contrastText' }}>
                         <Typography variant="body2" fontWeight={600}>
                           Overall conversion rate: {stats?.totalViews > 0 ? ((stats?.totalApplications || 0) / stats.totalViews * 100).toFixed(1) : 0}%
                         </Typography>
