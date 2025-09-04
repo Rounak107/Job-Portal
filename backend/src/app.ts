@@ -38,6 +38,12 @@ app.use(
   })
 );
 
+app.use(
+  '/uploads',
+  cors({ origin: '*' }),  // allow images to be fetched cross-origin
+  express.static(path.join(__dirname, '../uploads'))
+);
+
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

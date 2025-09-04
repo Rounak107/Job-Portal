@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
@@ -335,7 +336,11 @@ const API_BASE = import.meta.env.VITE_API_BASE;
 
 function assetUrl(path?: string | null) {
   if (!path) return undefined;
-  if (path.startsWith('/uploads/')) return `${API_BASE}${path}`;
+  if (path.startsWith('/uploads/')) {
+    // strip /api from API_BASE
+    const base = import.meta.env.VITE_API_BASE?.replace(/\/api$/, '') || '';
+    return `${base}${path}`;
+  }
   return path;
 }
 

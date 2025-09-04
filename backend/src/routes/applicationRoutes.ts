@@ -1,3 +1,4 @@
+
 // backend/src/routes/applicationRoutes.ts
 import express from 'express';
 import prisma from '../prisma';
