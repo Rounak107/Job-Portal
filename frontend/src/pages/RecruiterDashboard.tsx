@@ -79,7 +79,7 @@ const DashboardContainer = styled(Container)(({ theme }) => ({
   backgroundSize: '400% 400%',
   animation: `${gradientShift} 15s ease infinite`,
   minHeight: '100vh',
-  paddingTop: theme.spacing(4),
+  paddingTop: `calc(64px + ${theme.spacing(4)})`, // <-- Add navbar height
   paddingBottom: theme.spacing(4),
 }));
 
