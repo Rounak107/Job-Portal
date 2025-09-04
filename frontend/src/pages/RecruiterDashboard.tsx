@@ -79,8 +79,12 @@ const DashboardContainer = styled(Container)(({ theme }) => ({
   backgroundSize: '400% 400%',
   animation: `${gradientShift} 15s ease infinite`,
   minHeight: '100vh',
-  paddingTop: `calc(64px + ${theme.spacing(4)})`, // <-- Add navbar height
-  paddingBottom: theme.spacing(4),
+  // Reduced top padding to minimize extra vertical space while accounting for AppBar height
+  paddingTop: `calc(56px + ${theme.spacing(1)})`,
+  [theme.breakpoints.up('sm')]: {
+    paddingTop: `calc(64px + ${theme.spacing(1)})`,
+  },
+  paddingBottom: theme.spacing(3),
 }));
 
 const StyledCard = styled(Card)(({ theme }) => ({
@@ -290,8 +294,8 @@ export default function RecruiterDashboard() {
       <DashboardContainer maxWidth="xl">
         {/* Header */}
         <Fade in timeout={800}>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h3" fontWeight={800} color="primary.main" gutterBottom>
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h3" fontWeight={800} color="primary.main" sx={{ mb: 0.5 }}>
               Recruiter Dashboard
             </Typography>
             <Typography variant="h6" color="text.secondary">
@@ -317,7 +321,7 @@ export default function RecruiterDashboard() {
                         {(profile?.name || 'R').charAt(0).toUpperCase()}
                       </GlowingAvatar>
                       <Box flex={1}>
-                        <Typography variant="h5" fontWeight={700} gutterBottom>
+                        <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
                           {profile?.name || 'Recruiter'}
                         </Typography>
                         <Typography variant="body1" sx={{ opacity: 0.9, mb: 1 }}>
