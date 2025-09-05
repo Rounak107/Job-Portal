@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import {
   Box, Paper, Typography, Avatar, Button, Grid, CircularProgress, Divider,
   Card, CardContent, IconButton, Chip, Table, TableBody, TableCell, TableContainer, 
-  TableHead, TableRow, LinearProgress, Container, Stack, Fade, Grow, Slide
+  TableHead, TableRow, LinearProgress, Container, Stack, Fade, Grow, Slide, useMediaQuery
 } from '@mui/material';
 import { styled, keyframes } from '@mui/material/styles';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -24,6 +24,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ErrorIcon from '@mui/icons-material/Error';
 
 // Styled components with animations
 const pulse = keyframes`
@@ -201,6 +202,36 @@ type JobRow = {
   views: number;
 };
 
+// Error Boundary Component
+const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const handleError = () => setHasError(true);
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  if (hasError) {
+    return (
+      <Box sx={{ textAlign: 'center', p: 6 }}>
+        <ErrorIcon color="error" sx={{ fontSize: 60 }} />
+        <Typography variant="h6" color="error" gutterBottom>
+          Something went wrong!
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Please try refreshing the page or contact support.
+        </Typography>
+        <Button variant="contained" onClick={() => window.location.reload()} sx={{ mt: 2 }}>
+          Refresh
+        </Button>
+      </Box>
+    );
+  }
+
+  return <>{children}</>;
+};
+
 export default function RecruiterDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -213,12 +244,14 @@ export default function RecruiterDashboard() {
     async function fetchData() {
       try {
         setLoading(true);
+        console.log('Fetching recruiter data...');
         const res = await api.get('/recruiter/me');
         if (cancelled) return;
+        console.log('Data received:', res.data);
         setData(res.data);
         setError(null);
       } catch (err: any) {
-        console.error(err);
+        console.error('API Error:', err);
         setError(err?.response?.data?.message || 'Failed to load dashboard');
       } finally {
         if (!cancelled) setLoading(false);
@@ -259,6 +292,22 @@ export default function RecruiterDashboard() {
     );
   }
 
+  if (!data) {
+    console.error('No data loaded for dashboard');
+    return (
+      <DashboardContainer maxWidth="xl">
+        <StyledCard sx={{ p: 6, textAlign: 'center' }}>
+          <Typography variant="h6" color="warning" gutterBottom>
+            No data available.
+          </Typography>
+          <Button variant="contained" onClick={() => window.location.reload()} sx={{ mt: 2 }}>
+            Retry
+          </Button>
+        </StyledCard>
+      </DashboardContainer>
+    );
+  }
+
   const profile = data.profile;
   const stats = data.stats;
   const jobs: JobRow[] = data.jobs || [];
@@ -282,286 +331,444 @@ export default function RecruiterDashboard() {
     .slice(0, 3);
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
-    >
-      <DashboardContainer maxWidth="xl">
-        {/* Header */}
-        <Fade in timeout={800}>
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h3" fontWeight={800} color="primary.main" gutterBottom>
-              Recruiter Dashboard
-            </Typography>
-            <Typography variant="h6" color="text.secondary">
-              {profile?.name ? `Welcome back, ${profile.name}` : 'Welcome to your recruitment hub'}
-            </Typography>
-          </Box>
-        </Fade>
+    <ErrorBoundary>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+      >
+        <DashboardContainer maxWidth="xl">
+          {/* Header */}
+          <Fade in timeout={800}>
+            <Box sx={{ mb: 4 }}>
+              <Typography variant="h3" fontWeight={800} color="primary.main" gutterBottom>
+                Recruiter Dashboard
+              </Typography>
+              <Typography variant="h6" color="text.secondary">
+                {profile?.name ? `Welcome back, ${profile.name}` : 'Welcome to your recruitment hub'}
+              </Typography>
+            </Box>
+          </Fade>
 
-        <Grid container spacing={4}>
-          {/* Left Column */}
-          <Grid item xs={12} lg={8}>
-            <Stack spacing={4}>
-              {/* Profile Card */}
-              <motion.div
-                initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.6 }}
-              >
-                <ProfileCard>
-                  <CardContent sx={{ p: 4 }}>
-                    <Stack direction="row" spacing={3} alignItems="center">
-                      <GlowingAvatar>
-                        {(profile?.name || 'R').charAt(0).toUpperCase()}
-                      </GlowingAvatar>
-                      <Box flex={1}>
-                        <Typography variant="h5" fontWeight={700} gutterBottom>
-                          {profile?.name || 'Recruiter'}
-                        </Typography>
-                        <Typography variant="body1" sx={{ opacity: 0.9, mb: 1 }}>
-                          {profile?.email}
-                        </Typography>
-                        <Chip 
-                          label={`${stats?.jobCount ?? 0} Active Jobs`}
-                          sx={{ 
-                            bgcolor: 'rgba(255,255,255,0.2)', 
-                            color: 'white',
-                            fontWeight: 600
-                          }}
-                        />
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </ProfileCard>
-              </motion.div>
+          <Grid container spacing={4}>
+            {/* Left Column */}
+            <Grid item xs={12} lg={8}>
+              <Stack spacing={4}>
+                {/* Profile Card */}
+                <motion.div
+                  initial={{ x: -50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <ProfileCard>
+                    <CardContent sx={{ p: 4 }}>
+                      <Stack direction="row" spacing={3} alignItems="center">
+                        <GlowingAvatar>
+                          {(profile?.name || 'R').charAt(0).toUpperCase()}
+                        </GlowingAvatar>
+                        <Box flex={1}>
+                          <Typography variant="h5" fontWeight={700} gutterBottom>
+                            {profile?.name || 'Recruiter'}
+                          </Typography>
+                          <Typography variant="body1" sx={{ opacity: 0.9, mb: 1 }}>
+                            {profile?.email}
+                          </Typography>
+                          <Chip 
+                            label={`${stats?.jobCount ?? 0} Active Jobs`}
+                            sx={{ 
+                              bgcolor: 'rgba(255,255,255,0.2)', 
+                              color: 'white',
+                              fontWeight: 600
+                            }}
+                          />
+                        </Box>
+                      </Stack>
+                    </CardContent>
+                  </ProfileCard>
+                </motion.div>
 
-              {/* Stats Grid */}
-              <Grid container spacing={3}>
-                {[
-                  { title: 'Jobs Posted', value: stats?.jobCount ?? 0, icon: WorkIcon, color: '#1976d2' },
-                  { title: 'Total Views', value: stats?.totalViews ?? 0, icon: VisibilityIcon, color: '#4caf50' },
-                  { title: 'Applications', value: stats?.totalApplications ?? 0, icon: PeopleOutlineIcon, color: '#ff6f00' },
-                  { title: 'Login Sessions', value: stats?.loginCount ?? 0, icon: LoginIcon, color: '#9c27b0' }
-                ].map((stat, index) => (
-                  <Grid item xs={6} md={3} key={stat.title}>
+                {/* Stats Grid */}
+                <Grid container spacing={3}>
+                  {[
+                    { title: 'Jobs Posted', value: stats?.jobCount ?? 0, icon: WorkIcon, color: '#1976d2' },
+                    { title: 'Total Views', value: stats?.totalViews ?? 0, icon: VisibilityIcon, color: '#4caf50' },
+                    { title: 'Applications', value: stats?.totalApplications ?? 0, icon: PeopleOutlineIcon, color: '#ff6f00' },
+                    { title: 'Login Sessions', value: stats?.loginCount ?? 0, icon: LoginIcon, color: '#9c27b0' }
+                  ].map((stat, index) => (
+                    <Grid item xs={6} md={3} key={stat.title}>
+                      <motion.div
+                        initial={{ y: 50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.6, delay: index * 0.1 }}
+                      >
+                        <StatCard>
+                          <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                            <Box sx={{ 
+                              width: 60, 
+                              height: 60, 
+                              borderRadius: '50%', 
+                              bgcolor: stat.color,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              mx: 'auto',
+                              mb: 2
+                            }}>
+                              <stat.icon sx={{ color: 'white', fontSize: 30 }} />
+                            </Box>
+                            <Typography variant="h4" fontWeight={800} color="primary.main">
+                              <CountUp end={stat.value} duration={2} />
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                              {stat.title}
+                            </Typography>
+                          </CardContent>
+                        </StatCard>
+                      </motion.div>
+                    </Grid>
+                  ))}
+                </Grid>
+
+                {/* Charts */}
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
                     <motion.div
                       initial={{ y: 50, opacity: 0 }}
                       animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                      transition={{ duration: 0.8, delay: 0.4 }}
                     >
-                      <StatCard>
-                        <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                          <Box sx={{ 
-                            width: 60, 
-                            height: 60, 
-                            borderRadius: '50%', 
-                            bgcolor: stat.color,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            mx: 'auto',
-                            mb: 2
-                          }}>
-                            <stat.icon sx={{ color: 'white', fontSize: 30 }} />
-                          </Box>
-                          <Typography variant="h4" fontWeight={800} color="primary.main">
-                            <CountUp end={stat.value} duration={2} />
+                      <ChartCard>
+                        <CardContent sx={{ p: 3, height: '100%' }}>
+                          <Typography variant="h6" fontWeight={700} gutterBottom>
+                            Views & Applications Trend
                           </Typography>
-                          <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                            {stat.title}
-                          </Typography>
+                          <ResponsiveContainer width="100%" height={250}>
+                            <AreaChart data={combinedData}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="month" />
+                              <YAxis />
+                              <Tooltip content={<CustomTooltip />} />
+                              <Area 
+                                type="monotone" 
+                                dataKey="count" 
+                                stackId="1"
+                                stroke="#1976d2" 
+                                fill="url(#colorViews)"
+                                name="Views"
+                              />
+                              <Area 
+                                type="monotone" 
+                                dataKey="applications" 
+                                stackId="2"
+                                stroke="#ff6f00" 
+                                fill="url(#colorApps)"
+                                name="Applications"
+                              />
+                              <defs>
+                                <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#1976d2" stopOpacity={0.8}/>
+                                  <stop offset="95%" stopColor="#1976d2" stopOpacity={0.1}/>
+                                </linearGradient>
+                                <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#ff6f00" stopOpacity={0.8}/>
+                                  <stop offset="95%" stopColor="#ff6f00" stopOpacity={0.1}/>
+                                </linearGradient>
+                              </defs>
+                            </AreaChart>
+                          </ResponsiveContainer>
                         </CardContent>
-                      </StatCard>
+                      </ChartCard>
                     </motion.div>
                   </Grid>
-                ))}
-              </Grid>
 
-              {/* Charts */}
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <motion.div
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.4 }}
-                  >
-                    <ChartCard>
-                      <CardContent sx={{ p: 3, height: '100%' }}>
-                        <Typography variant="h6" fontWeight={700} gutterBottom>
-                          Views & Applications Trend
-                        </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
-                          <AreaChart data={combinedData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Area 
-                              type="monotone" 
-                              dataKey="count" 
-                              stackId="1"
-                              stroke="#1976d2" 
-                              fill="url(#colorViews)"
-                              name="Views"
-                            />
-                            <Area 
-                              type="monotone" 
-                              dataKey="applications" 
-                              stackId="2"
-                              stroke="#ff6f00" 
-                              fill="url(#colorApps)"
-                              name="Applications"
-                            />
-                            <defs>
-                              <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#1976d2" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#1976d2" stopOpacity={0.1}/>
-                              </linearGradient>
-                              <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#ff6f00" stopOpacity={0.8}/>
-                                <stop offset="95%" stopColor="#ff6f00" stopOpacity={0.1}/>
-                              </linearGradient>
-                            </defs>
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </CardContent>
-                    </ChartCard>
-                  </motion.div>
+                  <Grid item xs={12} md={6}>
+                    <motion.div
+                      initial={{ y: 50, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ duration: 0.8, delay: 0.5 }}
+                    >
+                      <ChartCard>
+                        <CardContent sx={{ p: 3, height: '100%' }}>
+                          <Typography variant="h6" fontWeight={700} gutterBottom>
+                            Performance Overview
+                          </Typography>
+                          <ResponsiveContainer width="100%" height={250}>
+                            <PieChart>
+                              <Pie
+                                data={pieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={100}
+                                paddingAngle={5}
+                                dataKey="value"
+                              >
+                                {pieData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip />
+                            </PieChart>
+                          </ResponsiveContainer>
+                          <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
+                            {pieData.map((item, index) => (
+                              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box sx={{ width: 12, height: 12, bgcolor: item.color, borderRadius: '50%' }} />
+                                <Typography variant="caption">{item.name}</Typography>
+                              </Box>
+                            ))}
+                          </Stack>
+                        </CardContent>
+                      </ChartCard>
+                    </motion.div>
+                  </Grid>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
-                  <motion.div
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.5 }}
-                  >
-                    <ChartCard>
-                      <CardContent sx={{ p: 3, height: '100%' }}>
-                        <Typography variant="h6" fontWeight={700} gutterBottom>
-                          Performance Overview
-                        </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={100}
-                              paddingAngle={5}
-                              dataKey="value"
-                            >
-                              {pieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                        <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
-                          {pieData.map((item, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Box sx={{ width: 12, height: 12, bgcolor: item.color, borderRadius: '50%' }} />
-                              <Typography variant="caption">{item.name}</Typography>
-                            </Box>
-                          ))}
-                        </Stack>
-                      </CardContent>
-                    </ChartCard>
-                  </motion.div>
-                </Grid>
-              </Grid>
+                {/* Jobs Table */}
+                <motion.div
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.6 }}
+                >
+                  <TableCard>
+                    <CardContent sx={{ p: 3 }}>
+                      <Typography variant="h6" fontWeight={700} gutterBottom>
+                        Your Posted Jobs
+                      </Typography>
+                      {jobs.length === 0 ? (
+                        <Box sx={{ textAlign: 'center', py: 6 }}>
+                          <WorkIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                          <Typography variant="body1" color="text.secondary">
+                            No jobs posted yet. Create your first job posting!
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <TableContainer>
+                          <Table>
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>Job Title</TableCell>
+                                <TableCell>Company</TableCell>
+                                <TableCell align="center">Applications</TableCell>
+                                <TableCell align="center">Views</TableCell>
+                                <TableCell align="center">Posted Date</TableCell>
+                                <TableCell align="center">Performance</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {jobs.map((job, index) => {
+                                const conversionRate = job.views > 0 ? ((job.applicationsCount / job.views) * 100).toFixed(1) : '0';
+                                return (
+                                  <motion.tr
+                                    key={job.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.1 }}
+                                  >
+                                    <TableCell>
+                                      <Typography fontWeight={600}>{job.title}</Typography>
+                                    </TableCell>
+                                    <TableCell>{job.company}</TableCell>
+                                    <TableCell align="center">
+                                      <Chip 
+                                        label={job.applicationsCount} 
+                                        color="primary"
+                                        size="small"
+                                      />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
+                                        <VisibilityIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                        <Typography>{job.views}</Typography>
+                                      </Stack>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Typography variant="body2">
+                                        {new Date(job.createdAt).toLocaleDateString()}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
+                                        <Typography variant="body2" fontWeight={600}>
+                                          {conversionRate}%
+                                        </Typography>
+                                        {parseFloat(conversionRate) > 5 ? 
+                                          <ArrowUpwardIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
+                                          <ArrowDownwardIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+                                        }
+                                      </Stack>
+                                    </TableCell>
+                                  </motion.tr>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      )}
+                    </CardContent>
+                  </TableCard>
+                </motion.div>
 
-              {/* Jobs Table */}
-              <motion.div
-                initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-              >
-                <TableCard>
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h6" fontWeight={700} gutterBottom>
-                      Your Posted Jobs
-                    </Typography>
-                    {jobs.length === 0 ? (
-                      <Box sx={{ textAlign: 'center', py: 6 }}>
-                        <WorkIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                        <Typography variant="body1" color="text.secondary">
-                          No jobs posted yet. Create your first job posting!
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <TableContainer>
-                        <Table>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Job Title</TableCell>
-                              <TableCell>Company</TableCell>
-                              <TableCell align="center">Applications</TableCell>
-                              <TableCell align="center">Views</TableCell>
-                              <TableCell align="center">Posted Date</TableCell>
-                              <TableCell align="center">Performance</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {jobs.map((job, index) => {
-                              const conversionRate = job.views > 0 ? ((job.applicationsCount / job.views) * 100).toFixed(1) : '0';
-                              return (
-                                <motion.tr
+                {isMobile && (
+                  <>
+                    {/* Quick Actions (Mobile) */}
+                    <motion.div
+                      initial={{ x: 50, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                    >
+                      <Typography variant="h6" fontWeight={700} gutterBottom>
+                        Quick Actions
+                      </Typography>
+                      <Stack spacing={2}>
+                        <ActionCard component={RouterLink} to="/jobs/new">
+                          <CardContent sx={{ p: 3 }}>
+                            <Stack direction="row" alignItems="center" spacing={2}>
+                              <AddCircleOutlineIcon sx={{ fontSize: 40 }} />
+                              <Box>
+                                <Typography variant="h6" fontWeight={700}>
+                                  Create Job
+                                </Typography>
+                                <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                                  Post a new job opening
+                                </Typography>
+                              </Box>
+                            </Stack>
+                          </CardContent>
+                        </ActionCard>
+
+                        <ActionCard component={RouterLink} to="/recruiter/applicants">
+                          <CardContent sx={{ p: 3 }}>
+                            <Stack direction="row" alignItems="center" spacing={2}>
+                              <PeopleOutlineIcon sx={{ fontSize: 40 }} />
+                              <Box>
+                                <Typography variant="h6" fontWeight={700}>
+                                  View Applicants
+                                </Typography>
+                                <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                                  Review job applications
+                                </Typography>
+                              </Box>
+                            </Stack>
+                          </CardContent>
+                        </ActionCard>
+                      </Stack>
+                    </motion.div>
+
+                    {/* Top Performing Jobs (Mobile) */}
+                    <motion.div
+                      initial={{ x: 50, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                    >
+                      <StyledCard>
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" fontWeight={700} gutterBottom>
+                            Top Performing Jobs
+                          </Typography>
+                          {topPerformingJobs.length === 0 ? (
+                            <Typography color="text.secondary" sx={{ py: 2 }}>
+                              No job performance data yet
+                            </Typography>
+                          ) : (
+                            <Stack spacing={2}>
+                              {topPerformingJobs.map((job, index) => (
+                                <motion.div
                                   key={job.id}
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
                                   transition={{ delay: index * 0.1 }}
                                 >
-                                  <TableCell>
-                                    <Typography fontWeight={600}>{job.title}</Typography>
-                                  </TableCell>
-                                  <TableCell>{job.company}</TableCell>
-                                  <TableCell align="center">
-                                    <Chip 
-                                      label={job.applicationsCount} 
-                                      color="primary"
-                                      size="small"
-                                    />
-                                  </TableCell>
-                                  <TableCell align="center">
-                                    <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
-                                      <VisibilityIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                                      <Typography>{job.views}</Typography>
-                                    </Stack>
-                                  </TableCell>
-                                  <TableCell align="center">
-                                    <Typography variant="body2">
-                                      {new Date(job.createdAt).toLocaleDateString()}
+                                  <Box sx={{ 
+                                    p: 2, 
+                                    borderRadius: 2, 
+                                    bgcolor: 'action.hover',
+                                    border: '1px solid',
+                                    borderColor: 'divider'
+                                  }}>
+                                    <Typography variant="body1" fontWeight={600} gutterBottom>
+                                      {job.title}
                                     </Typography>
-                                  </TableCell>
-                                  <TableCell align="center">
-                                    <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
-                                      <Typography variant="body2" fontWeight={600}>
-                                        {conversionRate}%
-                                      </Typography>
-                                      {parseFloat(conversionRate) > 5 ? 
-                                        <ArrowUpwardIcon sx={{ fontSize: 16, color: 'success.main' }} /> :
-                                        <ArrowDownwardIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-                                      }
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                      <Stack direction="row" spacing={1} alignItems="center">
+                                        <PeopleOutlineIcon sx={{ fontSize: 16 }} />
+                                        <Typography variant="body2">
+                                          {job.applicationsCount} applications
+                                        </Typography>
+                                      </Stack>
+                                      <Chip 
+                                        label={`#${index + 1}`} 
+                                        size="small" 
+                                        color="primary"
+                                      />
                                     </Stack>
-                                  </TableCell>
-                                </motion.tr>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    )}
-                  </CardContent>
-                </TableCard>
-              </motion.div>
+                                  </Box>
+                                </motion.div>
+                              ))}
+                            </Stack>
+                          )}
+                        </CardContent>
+                      </StyledCard>
+                    </motion.div>
 
-              {isMobile && (
-                <>
-                  {/* Quick Actions (Mobile) */}
+                    {/* Analytics Insights (Mobile) */}
+                    <motion.div
+                      initial={{ x: 50, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 0.6 }}
+                    >
+                      <StyledCard>
+                        <CardContent sx={{ p: 3 }}>
+                          <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+                            <AnalyticsIcon color="primary" />
+                            <Typography variant="h6" fontWeight={700}>
+                              Quick Insights
+                            </Typography>
+                          </Stack>
+                          <Stack spacing={2}>
+                            <Box sx={{ 
+                              p: 2, 
+                              borderRadius: 2, 
+                              bgcolor: 'success.light',
+                              color: 'success.contrastText'
+                            }}>
+                              <Typography variant="body2" fontWeight={600}>
+                                Average applications per job: {jobs.length > 0 ? Math.round((stats?.totalApplications || 0) / jobs.length) : 0}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ 
+                              p: 2, 
+                              borderRadius: 2, 
+                              bgcolor: 'info.light',
+                              color: 'info.contrastText'
+                            }}>
+                              <Typography variant="body2" fontWeight={600}>
+                                Average views per job: {jobs.length > 0 ? Math.round((stats?.totalViews || 0) / jobs.length) : 0}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ 
+                              p: 2, 
+                              borderRadius: 2, 
+                              bgcolor: 'warning.light',
+                              color: 'warning.contrastText'
+                            }}>
+                              <Typography variant="body2" fontWeight={600}>
+                                Overall conversion rate: {stats?.totalViews > 0 ? ((stats?.totalApplications || 0) / stats.totalViews * 100).toFixed(1) : 0}%
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </CardContent>
+                      </StyledCard>
+                    </motion.div>
+                  </>
+                )}
+              </Stack>
+            </Grid>
+
+            {!isMobile && (
+              <Grid item xs={12} lg={4}>
+                <Stack spacing={4}>
+                  {/* Quick Actions */}
                   <motion.div
                     initial={{ x: 50, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -605,7 +812,7 @@ export default function RecruiterDashboard() {
                     </Stack>
                   </motion.div>
 
-                  {/* Top Performing Jobs (Mobile) */}
+                  {/* Top Performing Jobs */}
                   <motion.div
                     initial={{ x: 50, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -661,7 +868,7 @@ export default function RecruiterDashboard() {
                     </StyledCard>
                   </motion.div>
 
-                  {/* Analytics Insights (Mobile) */}
+                  {/* Analytics Insights */}
                   <motion.div
                     initial={{ x: 50, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
@@ -710,168 +917,12 @@ export default function RecruiterDashboard() {
                       </CardContent>
                     </StyledCard>
                   </motion.div>
-                </>
-              )}
-            </Stack>
+                </Stack>
+              </Grid>
+            )}
           </Grid>
-
-          {!isMobile && (
-            <Grid item xs={12} lg={4}>
-              <Stack spacing={4}>
-                {/* Quick Actions */}
-                <motion.div
-                  initial={{ x: 50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                >
-                  <Typography variant="h6" fontWeight={700} gutterBottom>
-                    Quick Actions
-                  </Typography>
-                  <Stack spacing={2}>
-                    <ActionCard component={RouterLink} to="/jobs/new">
-                      <CardContent sx={{ p: 3 }}>
-                        <Stack direction="row" alignItems="center" spacing={2}>
-                          <AddCircleOutlineIcon sx={{ fontSize: 40 }} />
-                          <Box>
-                            <Typography variant="h6" fontWeight={700}>
-                              Create Job
-                            </Typography>
-                            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                              Post a new job opening
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </CardContent>
-                    </ActionCard>
-
-                    <ActionCard component={RouterLink} to="/recruiter/applicants">
-                      <CardContent sx={{ p: 3 }}>
-                        <Stack direction="row" alignItems="center" spacing={2}>
-                          <PeopleOutlineIcon sx={{ fontSize: 40 }} />
-                          <Box>
-                            <Typography variant="h6" fontWeight={700}>
-                              View Applicants
-                            </Typography>
-                            <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                              Review job applications
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </CardContent>
-                    </ActionCard>
-                  </Stack>
-                </motion.div>
-
-                {/* Top Performing Jobs */}
-                <motion.div
-                  initial={{ x: 50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
-                >
-                  <StyledCard>
-                    <CardContent sx={{ p: 3 }}>
-                      <Typography variant="h6" fontWeight={700} gutterBottom>
-                        Top Performing Jobs
-                      </Typography>
-                      {topPerformingJobs.length === 0 ? (
-                        <Typography color="text.secondary" sx={{ py: 2 }}>
-                          No job performance data yet
-                        </Typography>
-                      ) : (
-                        <Stack spacing={2}>
-                          {topPerformingJobs.map((job, index) => (
-                            <motion.div
-                              key={job.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: index * 0.1 }}
-                            >
-                              <Box sx={{ 
-                                p: 2, 
-                                borderRadius: 2, 
-                                bgcolor: 'action.hover',
-                                border: '1px solid',
-                                borderColor: 'divider'
-                              }}>
-                                <Typography variant="body1" fontWeight={600} gutterBottom>
-                                  {job.title}
-                                </Typography>
-                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                  <Stack direction="row" spacing={1} alignItems="center">
-                                    <PeopleOutlineIcon sx={{ fontSize: 16 }} />
-                                    <Typography variant="body2">
-                                      {job.applicationsCount} applications
-                                    </Typography>
-                                  </Stack>
-                                  <Chip 
-                                    label={`#${index + 1}`} 
-                                    size="small" 
-                                    color="primary"
-                                  />
-                                </Stack>
-                              </Box>
-                            </motion.div>
-                          ))}
-                        </Stack>
-                      )}
-                    </CardContent>
-                  </StyledCard>
-                </motion.div>
-
-                {/* Analytics Insights */}
-                <motion.div
-                  initial={{ x: 50, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ duration: 0.6, delay: 0.6 }}
-                >
-                  <StyledCard>
-                    <CardContent sx={{ p: 3 }}>
-                      <Stack direction="row" alignItems="center" spacing={1} mb={2}>
-                        <AnalyticsIcon color="primary" />
-                        <Typography variant="h6" fontWeight={700}>
-                          Quick Insights
-                        </Typography>
-                      </Stack>
-                      <Stack spacing={2}>
-                        <Box sx={{ 
-                          p: 2, 
-                          borderRadius: 2, 
-                          bgcolor: 'success.light',
-                          color: 'success.contrastText'
-                        }}>
-                          <Typography variant="body2" fontWeight={600}>
-                            Average applications per job: {jobs.length > 0 ? Math.round((stats?.totalApplications || 0) / jobs.length) : 0}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ 
-                          p: 2, 
-                          borderRadius: 2, 
-                          bgcolor: 'info.light',
-                          color: 'info.contrastText'
-                        }}>
-                          <Typography variant="body2" fontWeight={600}>
-                            Average views per job: {jobs.length > 0 ? Math.round((stats?.totalViews || 0) / jobs.length) : 0}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ 
-                          p: 2, 
-                          borderRadius: 2, 
-                          bgcolor: 'warning.light',
-                          color: 'warning.contrastText'
-                        }}>
-                          <Typography variant="body2" fontWeight={600}>
-                            Overall conversion rate: {stats?.totalViews > 0 ? ((stats?.totalApplications || 0) / stats.totalViews * 100).toFixed(1) : 0}%
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </StyledCard>
-                </motion.div>
-              </Stack>
-            </Grid>
-          )}
-        </Grid>
-      </DashboardContainer>
-    </motion.div>
+        </DashboardContainer>
+      </motion.div>
+    </ErrorBoundary>
   );
 }
