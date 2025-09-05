@@ -4,26 +4,21 @@ import { api } from '../api';
 import { useAuth } from '../auth/AuthProvider';
 import { Link as RouterLink } from 'react-router-dom';
 import CountUp from 'react-countup';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { motion } from 'framer-motion';
 import {
-  Box, Paper, Typography, Avatar, Button, Grid, CircularProgress, Divider,
-  Card, CardContent, IconButton, Chip, Table, TableBody, TableCell, TableContainer, 
-  TableHead, TableRow, LinearProgress, Container, Stack, Fade, Grow, Slide,
-  useMediaQuery, Theme
+  Box, Typography, Avatar, Button, Grid, CircularProgress,
+  Card, CardContent, Chip, Table, TableBody, TableCell, TableContainer, 
+  TableHead, TableRow, LinearProgress, Container, Stack, Fade
 } from '@mui/material';
-import { styled, keyframes } from '@mui/material/styles';
+import { styled, keyframes, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkIcon from '@mui/icons-material/Work';
 import LoginIcon from '@mui/icons-material/Login';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
-import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
-import PersonIcon from '@mui/icons-material/Person';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
@@ -40,26 +35,6 @@ const pulse = keyframes`
   100% {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(25, 118, 210, 0);
-  }
-`;
-
-const fadeInUp = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
-
-const shimmer = keyframes`
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
   }
 `;
 
@@ -203,88 +178,15 @@ type JobRow = {
   views: number;
 };
 
-export default function RecruiterDashboard() {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
-  const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('lg'));
+type Stats = {
+  jobCount?: number;
+  totalApplications?: number;
+  totalViews?: number;
+  loginCount?: number;
+};
 
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchData() {
-      try {
-        setLoading(true);
-        const res = await api.get('/recruiter/me');
-        if (cancelled) return;
-        setData(res.data);
-        setError(null);
-      } catch (err: any) {
-        console.error(err);
-        setError(err?.response?.data?.message || 'Failed to load dashboard');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    fetchData();
-    return () => { cancelled = true; };
-  }, []);
-
-  if (loading) {
-    return (
-      <DashboardContainer maxWidth="xl">
-        <StyledCard sx={{ p: 6, textAlign: 'center' }}>
-          <Stack alignItems="center" spacing={3}>
-            <CircularProgress size={60} thickness={4} />
-            <Typography variant="h6" color="text.secondary">
-              Loading your dashboard...
-            </Typography>
-            <LinearProgress sx={{ width: 300, borderRadius: 2, height: 8 }} />
-          </Stack>
-        </StyledCard>
-      </DashboardContainer>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardContainer maxWidth="xl">
-        <StyledCard sx={{ p: 6, textAlign: 'center' }}>
-          <Typography variant="h6" color="error" gutterBottom>
-            {error}
-          </Typography>
-          <Button variant="contained" onClick={() => window.location.reload()} sx={{ mt: 2 }}>
-            Retry
-          </Button>
-        </StyledCard>
-      </DashboardContainer>
-    );
-  }
-
-  const profile = data.profile;
-  const stats = data.stats;
-  const jobs: JobRow[] = data.jobs || [];
-  const viewsByMonth = data.analytics?.viewsByMonth || [];
-  const appsByMonth = data.analytics?.appsByMonth || [];
-
-  // Enhanced analytics data
-  const combinedData = viewsByMonth.map((item: any, index: number) => ({
-    ...item,
-    applications: appsByMonth[index]?.count || 0
-  }));
-
-  const pieData = [
-    { name: 'Active Jobs', value: stats?.jobCount || 0, color: '#1976d2' },
-    { name: 'Total Applications', value: stats?.totalApplications || 0, color: '#ff6f00' },
-    { name: 'Profile Views', value: stats?.totalViews || 0, color: '#4caf50' }
-  ];
-
-  const topPerformingJobs = jobs
-    .sort((a, b) => b.applicationsCount - a.applicationsCount)
-    .slice(0, 3);
-
-  // Right sidebar content
-  const quickActions = (
+function QuickActionsSection() {
+  return (
     <motion.div
       initial={{ x: 50, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
@@ -328,8 +230,10 @@ export default function RecruiterDashboard() {
       </Stack>
     </motion.div>
   );
+}
 
-  const topPerformingJobsSection = (
+function TopPerformingJobsCard({ topPerformingJobs }: { topPerformingJobs: JobRow[] }) {
+  return (
     <motion.div
       initial={{ x: 50, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
@@ -385,8 +289,10 @@ export default function RecruiterDashboard() {
       </StyledCard>
     </motion.div>
   );
+}
 
-  const quickInsights = (
+function QuickInsightsCard({ jobs, stats }: { jobs: JobRow[]; stats: Stats }) {
+  return (
     <motion.div
       initial={{ x: 50, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
@@ -428,7 +334,7 @@ export default function RecruiterDashboard() {
               color: 'warning.contrastText'
             }}>
               <Typography variant="body2" fontWeight={600}>
-                Overall conversion rate: {stats?.totalViews > 0 ? ((stats?.totalApplications || 0) / stats.totalViews * 100).toFixed(1) : 0}%
+                Overall conversion rate: {stats?.totalViews ? (((stats?.totalApplications || 0) / stats.totalViews) * 100).toFixed(1) : 0}%
               </Typography>
             </Box>
           </Stack>
@@ -436,6 +342,90 @@ export default function RecruiterDashboard() {
       </StyledCard>
     </motion.div>
   );
+}
+
+export default function RecruiterDashboard() {
+  const { user } = useAuth();
+  const theme = useTheme();
+  const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
+
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchData() {
+      try {
+        setLoading(true);
+        const res = await api.get('/recruiter/me');
+        if (cancelled) return;
+        setData(res.data);
+        setError(null);
+      } catch (err: any) {
+        console.error(err);
+        setError(err?.response?.data?.message || 'Failed to load dashboard');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchData();
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardContainer maxWidth="xl">
+        <StyledCard sx={{ p: 6, textAlign: 'center' }}>
+          <Stack alignItems="center" spacing={3}>
+            <CircularProgress size={60} thickness={4} />
+            <Typography variant="h6" color="text.secondary">
+              Loading your dashboard...
+            </Typography>
+            <LinearProgress sx={{ width: 300, borderRadius: 2, height: 8 }} />
+          </Stack>
+        </StyledCard>
+      </DashboardContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardContainer maxWidth="xl">
+        <StyledCard sx={{ p: 6, textAlign: 'center' }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            {error}
+          </Typography>
+          <Button variant="contained" onClick={() => window.location.reload()} sx={{ mt: 2 }}>
+            Retry
+          </Button>
+        </StyledCard>
+      </DashboardContainer>
+    );
+  }
+
+  const profile = data.profile;
+  const stats: Stats = data.stats || {};
+  const jobs: JobRow[] = data.jobs || [];
+  const viewsByMonth = data.analytics?.viewsByMonth || [];
+  const appsByMonth = data.analytics?.appsByMonth || [];
+
+  // Enhanced analytics data
+  const combinedData = viewsByMonth.map((item: any, index: number) => ({
+    ...item,
+    applications: appsByMonth[index]?.count || 0
+  }));
+
+  const pieData = [
+    { name: 'Active Jobs', value: stats?.jobCount || 0, color: '#1976d2' },
+    { name: 'Total Applications', value: stats?.totalApplications || 0, color: '#ff6f00' },
+    { name: 'Profile Views', value: stats?.totalViews || 0, color: '#4caf50' }
+  ];
+
+  const topPerformingJobs = jobs
+    .slice() // avoid mutating original
+    .sort((a, b) => b.applicationsCount - a.applicationsCount)
+    .slice(0, 3);
 
   return (
     <motion.div
@@ -456,9 +446,9 @@ export default function RecruiterDashboard() {
           </Box>
         </Fade>
 
-        <Grid container spacing={4}>
-          {/* Left Column */}
-          <Grid item xs={12} lg={8}>
+        {/* Top Row: Profile (left) + Right side (Quick Actions, Top Jobs, Insights) */}
+        <Grid container spacing={4} alignItems="stretch">
+          <Grid item xs={12} md={8}>
             <Stack spacing={4}>
               {/* Profile Card */}
               <motion.div
@@ -493,9 +483,29 @@ export default function RecruiterDashboard() {
                 </ProfileCard>
               </motion.div>
 
-              {/* Quick Actions for Mobile */}
-              {isMobile && quickActions}
+              {/* Mobile-only: Quick Actions directly under Profile */}
+              {!isMdUp && (
+                <QuickActionsSection />
+              )}
+            </Stack>
+          </Grid>
 
+          {/* Desktop-only: Right side content next to Profile */}
+          {isMdUp && (
+            <Grid item xs={12} md={4}>
+              <Stack spacing={4}>
+                <QuickActionsSection />
+                <TopPerformingJobsCard topPerformingJobs={topPerformingJobs} />
+                <QuickInsightsCard jobs={jobs} stats={stats} />
+              </Stack>
+            </Grid>
+          )}
+        </Grid>
+
+        {/* Main Content below: Stats, Charts, Jobs table (kept at left width on desktop) */}
+        <Grid container spacing={4} sx={{ mt: 0 }}>
+          <Grid item xs={12} md={8}>
+            <Stack spacing={4}>
               {/* Stats Grid */}
               <Grid container spacing={3}>
                 {[
@@ -717,28 +727,24 @@ export default function RecruiterDashboard() {
                   </CardContent>
                 </TableCard>
               </motion.div>
-
-              {/* Top Performing Jobs and Quick Insights for Mobile */}
-              {isMobile && (
-                <>
-                  {topPerformingJobsSection}
-                  {quickInsights}
-                </>
-              )}
             </Stack>
           </Grid>
 
-          {/* Right Sidebar for Desktop */}
-          {!isMobile && (
-            <Grid item xs={12} lg={4}>
-              <Stack spacing={4}>
-                {quickActions}
-                {topPerformingJobsSection}
-                {quickInsights}
-              </Stack>
-            </Grid>
-          )}
+          {/* Placeholder to keep left width consistent on desktop */}
+          <Grid item md={4} sx={{ display: { xs: 'none', md: 'block' } }} />
         </Grid>
+
+        {/* Mobile-only: place Top Performing Jobs and Quick Insights at the very end */}
+        {!isMdUp && (
+          <Grid container spacing={4} sx={{ mt: 0 }}>
+            <Grid item xs={12}>
+              <TopPerformingJobsCard topPerformingJobs={topPerformingJobs} />
+            </Grid>
+            <Grid item xs={12}>
+              <QuickInsightsCard jobs={jobs} stats={stats} />
+            </Grid>
+          </Grid>
+        )}
       </DashboardContainer>
     </motion.div>
   );
