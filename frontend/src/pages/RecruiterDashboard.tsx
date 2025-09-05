@@ -311,7 +311,14 @@ export default function RecruiterDashboard() {
         Quick Actions
       </Typography>
       <Stack spacing={2}>
-        <ActionCard component={RouterLink} to="/jobs/new">
+        <ActionCard
+  component={RouterLink}
+  to="/jobs/new"
+  sx={{
+    background: 'linear-gradient(135deg, #0e2aaa9e 0%, #211e5bb6 100%)',
+    color: '#fff',
+  }}
+>
           <CardContent sx={{ p: 2.5 }}>
             <Stack direction="row" alignItems="center" spacing={2}>
               <AddCircleOutlineIcon sx={{ fontSize: 32 }} />
@@ -327,7 +334,14 @@ export default function RecruiterDashboard() {
           </CardContent>
         </ActionCard>
 
-        <ActionCard component={RouterLink} to="/recruiter/applicants">
+        <ActionCard
+  component={RouterLink}
+  to="/recruiter/applicants"
+  sx={{
+    background: 'linear-gradient(135deg, #07500bbc 0%, #04410fff 100%)',
+    color: '#fff',
+  }}
+>
           <CardContent sx={{ p: 2.5 }}>
             <Stack direction="row" alignItems="center" spacing={2}>
               <PeopleOutlineIcon sx={{ fontSize: 32 }} />
@@ -463,11 +477,11 @@ export default function RecruiterDashboard() {
       <DashboardContainer maxWidth="xl">
         {/* Header */}
         <Fade in timeout={800}>
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="h4" fontWeight={700} color="primary.main" gutterBottom>
+          <Box sx={{ mb: 4 }}>
+            <Typography variant="h3" fontWeight={800} color="primary.main" gutterBottom>
               Recruiter Dashboard
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="h6" color="text.secondary">
               {profile?.name ? `Welcome back, ${profile.name}` : 'Welcome to your recruitment hub'}
             </Typography>
           </Box>
@@ -514,7 +528,7 @@ export default function RecruiterDashboard() {
               {isMobile && quickActions}
 
               {/* Stats Grid */}
-              <Grid container spacing={2}>
+              <Grid container spacing={3}>
                 {[
                   { title: 'Jobs Posted', value: stats?.jobCount ?? 0, icon: WorkIcon, color: '#1976d2' },
                   { title: 'Total Views', value: stats?.totalViews ?? 0, icon: VisibilityIcon, color: '#4caf50' },
@@ -528,21 +542,21 @@ export default function RecruiterDashboard() {
                       transition={{ duration: 0.6, delay: index * 0.1 }}
                     >
                       <StatCard>
-                        <CardContent sx={{ textAlign: 'center', p: 2.5 }}>
+                        <CardContent sx={{ textAlign: 'center', p: 3 }}>
                           <Box sx={{ 
-                            width: 50, 
-                            height: 50, 
+                            width: 60, 
+                            height: 60, 
                             borderRadius: '50%', 
                             bgcolor: stat.color,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             mx: 'auto',
-                            mb: 1.5
+                            mb: 2
                           }}>
-                            <stat.icon sx={{ color: 'white', fontSize: 24 }} />
+                            <stat.icon sx={{ color: 'white', fontSize: 30 }} />
                           </Box>
-                          <Typography variant="h4" fontWeight={700} color="primary.main">
+                          <Typography variant="h4" fontWeight={800} color="primary.main">
                             <CountUp end={stat.value} duration={2} />
                           </Typography>
                           <Typography variant="body2" color="text.secondary" fontWeight={600}>
@@ -618,14 +632,14 @@ export default function RecruiterDashboard() {
                         <Typography variant="h6" fontWeight={600} gutterBottom>
                           Performance Overview
                         </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
+                         <ResponsiveContainer width="100%" height={250}>
                           <PieChart>
                             <Pie
                               data={pieData}
                               cx="50%"
                               cy="50%"
-                              innerRadius={50}
-                              outerRadius={80}
+                              innerRadius={60}
+                              outerRadius={100}
                               paddingAngle={5}
                               dataKey="value"
                             >
@@ -636,10 +650,10 @@ export default function RecruiterDashboard() {
                             <Tooltip />
                           </PieChart>
                         </ResponsiveContainer>
-                        <Stack direction="row" spacing={1.5} justifyContent="center" mt={2}>
+                        <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
                           {pieData.map((item, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <Box sx={{ width: 10, height: 10, bgcolor: item.color, borderRadius: '50%' }} />
+                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 12, height: 12, bgcolor: item.color, borderRadius: '50%' }} />
                               <Typography variant="caption">{item.name}</Typography>
                             </Box>
                           ))}
