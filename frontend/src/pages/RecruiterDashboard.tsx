@@ -4,104 +4,133 @@ import { api } from '../api';
 import { useAuth } from '../auth/AuthProvider';
 import { Link as RouterLink } from 'react-router-dom';
 import CountUp from 'react-countup';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import { motion } from 'framer-motion';
 import {
-  Box, Paper, Typography, Button, Grid, CircularProgress,
-  Card, CardContent, Chip, Container, Stack, LinearProgress
+  Box, Typography, Avatar, Button, Grid, CircularProgress,
+  Card, CardContent, Chip, Table, TableBody, TableCell, 
+  TableContainer, TableHead, TableRow, LinearProgress, Container, Stack, Fade
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { styled, keyframes } from '@mui/material/styles';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WorkIcon from '@mui/icons-material/Work';
 import LoginIcon from '@mui/icons-material/Login';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 
-// Styled Components
+// Animations
+const gradientShift = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
+
 const DashboardContainer = styled(Container)(({ theme }) => ({
-  paddingTop: theme.spacing(4),
-  paddingBottom: theme.spacing(4),
-  backgroundColor: theme.palette.grey[50],
+  background: `linear-gradient(-45deg, ${theme.palette.background.default}, ${theme.palette.action.hover}, ${theme.palette.background.paper})`,
+  backgroundSize: '400% 400%',
+  animation: `${gradientShift} 15s ease infinite`,
+  minHeight: '100vh',
+  paddingTop: `calc(64px + ${theme.spacing(1.5)})`,
+  paddingBottom: theme.spacing(2),
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({
+const BaseCard = styled(Card)(({ theme }) => ({
   borderRadius: 16,
   background: theme.palette.background.paper,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+  boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
+  transition: 'all 0.25s ease',
   height: '100%',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
-  }
 }));
 
-const StatCard = styled(StyledCard)({
+const StatCard = styled(BaseCard)(({ theme }) => ({
+  padding: theme.spacing(2),
   textAlign: 'center',
-  padding: '24px 16px',
-});
-
-const StatIconContainer = styled(Box)(({ theme }) => ({
-  width: 60,
-  height: 60,
-  borderRadius: '50%',
-  margin: '0 auto 16px',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: theme.palette.common.white,
 }));
 
-const ChartCard = styled(StyledCard)(({ theme }) => ({
-  padding: theme.spacing(3),
+const ActionCard = styled(BaseCard)(({ theme }) => ({
+  borderRadius: 12,
+  border: `1px solid ${theme.palette.divider}`,
+  transition: 'all 0.25s ease',
+  cursor: 'pointer',
+  textDecoration: 'none',
+  display: 'block',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 12px 28px rgba(0,0,0,0.12)',
+    textDecoration: 'none',
+  }
 }));
 
-// Custom Tooltip for Area Chart
+const ChartCard = styled(BaseCard)(({ theme }) => ({
+  padding: theme.spacing(2),
+  '& .recharts-cartesian-grid-horizontal line': {
+    stroke: theme.palette.divider,
+  },
+  '& .recharts-cartesian-grid-vertical line': {
+    stroke: theme.palette.divider,
+  }
+}));
+
+const TableCard = styled(BaseCard)(({ theme }) => ({
+  '& .MuiTableHead-root .MuiTableCell-root': {
+    fontWeight: 700,
+    backgroundColor: theme.palette.grey[50],
+    borderBottom: `2px solid ${theme.palette.divider}`,
+  },
+  '& .MuiTableRow-root': {
+    transition: 'all 0.2s ease',
+    '&:hover': {
+      backgroundColor: theme.palette.action.hover,
+    }
+  }
+}));
+
+const GlowingAvatar = styled(Avatar)(({ theme }) => ({
+  width: 56,
+  height: 56,
+  background: `linear-gradient(45deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+  color: 'white',
+  boxShadow: `0 0 16px ${theme.palette.primary.main}33`,
+}));
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <Paper elevation={3} sx={{ p: 2, borderRadius: 2 }}>
+      <Box sx={{
+        bgcolor: 'background.paper',
+        p: 1.5,
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 1.5,
+        boxShadow: 3
+      }}>
         <Typography variant="body2" fontWeight={600}>{label}</Typography>
-        <Typography variant="body2" sx={{ color: '#1976d2' }}>
-          Views: {payload[1]?.value}
+        <Typography variant="body2" color="primary">
+          Views: {payload[0].value}
         </Typography>
-        <Typography variant="body2" sx={{ color: '#ff6f00' }}>
-          Applications: {payload[0]?.value}
+        <Typography variant="body2" color="secondary">
+          Applications: {payload[1].value}
         </Typography>
-      </Paper>
+      </Box>
     );
   }
   return null;
 };
 
-// Custom Legend for Pie Chart
-const renderLegend = (props: any) => {
-  const { payload } = props;
-  return (
-    <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
-      {payload.map((entry: any, index: number) => (
-        <Box key={`item-${index}`} display="flex" alignItems="center">
-          <Box
-            sx={{
-              width: 12,
-              height: 12,
-              borderRadius: '50%',
-              bgcolor: entry.color,
-              mr: 1,
-            }}
-          />
-          <Typography variant="caption">{entry.value}</Typography>
-        </Box>
-      ))}
-    </Stack>
-  );
-};
-
-
 type JobRow = {
   id: number;
   title: string;
+  company?: string;
+  location?: string;
+  createdAt: string;
   applicationsCount: number;
+  views: number;
 };
 
 export default function RecruiterDashboard() {
@@ -111,25 +140,30 @@ export default function RecruiterDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     async function fetchData() {
       try {
         setLoading(true);
         const res = await api.get('/recruiter/me');
+        if (cancelled) return;
         setData(res.data);
+        setError(null);
       } catch (err: any) {
         console.error(err);
         setError(err?.response?.data?.message || 'Failed to load dashboard');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     fetchData();
+    return () => { cancelled = true; };
   }, []);
 
-  // Memoize computed values
-  const { stats, jobs, viewsByMonth, appsByMonth } = useMemo(() => {
-    if (!data) return { stats: null, jobs: [], viewsByMonth: [], appsByMonth: [] };
+  // Extract computed values
+  const { profile, stats, jobs, viewsByMonth, appsByMonth } = useMemo(() => {
+    if (!data) return { profile: null, stats: null, jobs: [], viewsByMonth: [], appsByMonth: [] };
     return {
+      profile: data.profile,
       stats: data.stats,
       jobs: data.jobs || [],
       viewsByMonth: data.analytics?.viewsByMonth || [],
@@ -140,50 +174,32 @@ export default function RecruiterDashboard() {
   const combinedData = useMemo(() =>
     viewsByMonth.map((item: any, index: number) => ({
       ...item,
-      applications: appsByMonth[index]?.count || 0,
+      applications: appsByMonth[index]?.count || 0
     })),
     [viewsByMonth, appsByMonth]
   );
 
   const pieData = useMemo(() => [
     { name: 'Active Jobs', value: stats?.jobCount || 0, color: '#1976d2' },
-    { name: 'Applications', value: stats?.totalApplications || 0, color: '#ff6f00' },
+    { name: 'Total Applications', value: stats?.totalApplications || 0, color: '#ff6f00' },
     { name: 'Profile Views', value: stats?.totalViews || 0, color: '#4caf50' }
   ], [stats]);
 
   const topPerformingJobs = useMemo(() =>
-    jobs.sort((a: JobRow, b: JobRow) => b.applicationsCount - a.applicationsCount).slice(0, 3),
+    [...jobs].sort((a: JobRow, b: JobRow) => b.applicationsCount - a.applicationsCount).slice(0, 3),
     [jobs]
   );
-
-  const quickInsights = [
-      { 
-          label: 'Average applications per job', 
-          value: jobs.length > 0 ? Math.round((stats?.totalApplications || 0) / jobs.length) : 0,
-          color: 'success.main'
-      },
-      { 
-          label: 'Average views per job', 
-          value: jobs.length > 0 ? Math.round((stats?.totalViews || 0) / jobs.length) : 0,
-          color: 'primary.main'
-      },
-      { 
-          label: 'Overall conversion rate', 
-          value: `${stats?.totalViews > 0 ? ((stats?.totalApplications || 0) / stats.totalViews * 100).toFixed(1) : 0}%`,
-          color: 'warning.main'
-      },
-  ];
 
   if (loading) {
     return (
       <DashboardContainer maxWidth="xl">
-        <StyledCard sx={{ p: 4, textAlign: 'center' }}>
-          <Stack alignItems="center" spacing={3}>
-            <CircularProgress size={60} />
+        <BaseCard sx={{ p: 4, textAlign: 'center' }}>
+          <Stack alignItems="center" spacing={2}>
+            <CircularProgress size={56} thickness={4} />
             <Typography variant="h6" color="text.secondary">Loading your dashboard...</Typography>
-            <LinearProgress sx={{ width: 300, borderRadius: 2, height: 8 }} />
+            <LinearProgress sx={{ width: 280, borderRadius: 2, height: 6 }} />
           </Stack>
-        </StyledCard>
+        </BaseCard>
       </DashboardContainer>
     );
   }
@@ -191,131 +207,172 @@ export default function RecruiterDashboard() {
   if (error) {
     return (
       <DashboardContainer maxWidth="xl">
-        <StyledCard sx={{ p: 4, textAlign: 'center' }}>
+        <BaseCard sx={{ p: 4, textAlign: 'center' }}>
           <Typography variant="h6" color="error" gutterBottom>{error}</Typography>
           <Button variant="contained" onClick={() => window.location.reload()} sx={{ mt: 2 }}>Retry</Button>
-        </StyledCard>
+        </BaseCard>
       </DashboardContainer>
     );
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
       <DashboardContainer maxWidth="xl">
-        <Grid container spacing={3}>
-          {/* Left Column */}
+        {/* Row 1: Stats (full-width, compact) */}
+        <Grid container spacing={2} sx={{ mb: 1 }}>
+          {[
+            { title: 'Jobs Posted', value: stats?.jobCount ?? 0, icon: WorkIcon, color: '#1976d2' },
+            { title: 'Total Views', value: stats?.totalViews ?? 0, icon: VisibilityIcon, color: '#4caf50' },
+            { title: 'Applications', value: stats?.totalApplications ?? 0, icon: PeopleOutlineIcon, color: '#ff6f00' },
+            { title: 'Login Sessions', value: stats?.loginCount ?? 0, icon: LoginIcon, color: '#9c27b0' }
+          ].map((stat, index) => (
+            <Grid item xs={6} md={3} key={stat.title}>
+              <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: index * 0.05 }}>
+                <StatCard>
+                  <Stack alignItems="center" spacing={1}>
+                    <Avatar sx={{ bgcolor: `${stat.color}20`, color: stat.color, width: 56, height: 56 }}>
+                      <stat.icon />
+                    </Avatar>
+                    <Typography variant="h4" fontWeight={800} color="text.primary" lineHeight={1.1}>
+                      <CountUp end={stat.value} duration={1.4} />
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                      {stat.title}
+                    </Typography>
+                  </Stack>
+                </StatCard>
+              </motion.div>
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Row 2: Charts (left) + Sidebar (right) */}
+        <Grid container spacing={2}>
+          {/* Left 8 columns: Two charts side-by-side (compact) */}
           <Grid item xs={12} lg={8}>
-            <Stack spacing={3}>
-              {/* Stats Grid */}
-              <Grid container spacing={3}>
-                {[
-                  { title: 'Jobs Posted', value: stats?.jobCount ?? 0, icon: WorkIcon, color: '#1976d2' },
-                  { title: 'Total Views', value: stats?.totalViews ?? 0, icon: VisibilityIcon, color: '#4caf50' },
-                  { title: 'Applications', value: stats?.totalApplications ?? 0, icon: PeopleOutlineIcon, color: '#ff6f00' },
-                  { title: 'Login Sessions', value: stats?.loginCount ?? 0, icon: LoginIcon, color: '#9c27b0' }
-                ].map((stat, index) => (
-                  <Grid item xs={6} md={3} key={stat.title}>
-                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: index * 0.1 }}>
-                      <StatCard>
-                        <StatIconContainer sx={{ bgcolor: stat.color }}>
-                          <stat.icon sx={{ fontSize: 32 }} />
-                        </StatIconContainer>
-                        <Typography variant="h4" fontWeight={800}>
-                          <CountUp end={stat.value} duration={2} />
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {stat.title}
-                        </Typography>
-                      </StatCard>
-                    </motion.div>
-                  </Grid>
-                ))}
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
+                  <ChartCard>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                      Views & Applications Trend
+                    </Typography>
+                    <Box sx={{ height: 260 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={combinedData}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip content={<CustomTooltip />} />
+                          <Area type="monotone" dataKey="count" stackId="1" stroke="#1976d2" fill="url(#colorViews)" name="Views" />
+                          <Area type="monotone" dataKey="applications" stackId="2" stroke="#ff6f00" fill="url(#colorApps)" name="Applications" />
+                          <defs>
+                            <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#1976d2" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#1976d2" stopOpacity={0.1}/>
+                            </linearGradient>
+                            <linearGradient id="colorApps" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#ff6f00" stopOpacity={0.8}/>
+                              <stop offset="95%" stopColor="#ff6f00" stopOpacity={0.1}/>
+                            </linearGradient>
+                          </defs>
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </Box>
+                  </ChartCard>
+                </motion.div>
               </Grid>
-
-              {/* Charts */}
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={7}>
-                  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}>
-                    <ChartCard>
-                      <Typography variant="h6" fontWeight={700} gutterBottom>Views & Applications Trend</Typography>
-                      <Box sx={{ height: 300, mt: 2 }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={combinedData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Area type="monotone" dataKey="applications" stackId="1" stroke="#ff6f00" fill="#ff6f00" fillOpacity={0.3} />
-                            <Area type="monotone" dataKey="count" name="Views" stackId="1" stroke="#1976d2" fill="#1976d2" fillOpacity={0.3} />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </Box>
-                    </ChartCard>
-                  </motion.div>
-                </Grid>
-
-                <Grid item xs={12} md={5}>
-                  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.3 }}>
-                    <ChartCard>
-                      <Typography variant="h6" fontWeight={700} gutterBottom>Performance Overview</Typography>
-                      <Box sx={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie data={pieData} cx="50%" cy="45%" innerRadius={70} outerRadius={90} paddingAngle={5} dataKey="value">
-                              {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
-                            </Pie>
-                            <Legend content={renderLegend} verticalAlign="bottom" />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </Box>
-                    </ChartCard>
-                  </motion.div>
-                </Grid>
+              <Grid item xs={12} md={6}>
+                <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }}>
+                  <ChartCard>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                      Performance Overview
+                    </Typography>
+                    <Box sx={{ height: 260, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={4} dataKey="value">
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" mt={1}>
+                        {pieData.map((item, index) => (
+                          <Chip
+                            key={index}
+                            label={item.name}
+                            size="small"
+                            sx={{ bgcolor: `${item.color}20`, color: 'text.primary', fontWeight: 600, fontSize: '0.7rem' }}
+                          />
+                        ))}
+                      </Stack>
+                    </Box>
+                  </ChartCard>
+                </motion.div>
               </Grid>
-            </Stack>
+            </Grid>
           </Grid>
 
-          {/* Right Column */}
+          {/* Right 4 columns: Sidebar */}
           <Grid item xs={12} lg={4}>
-            <Stack spacing={3}>
-              {/* Quick Actions */}
-               <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.1 }}>
-                  <StyledCard
-                    component={RouterLink}
-                    to="/recruiter/applicants"
-                    sx={{ textDecoration: 'none', bgcolor: '#673ab7', color: 'white', '&:hover': { bgcolor: '#5e35b1' } }}
-                  >
-                    <CardContent>
+            <Stack spacing={2}>
+              {/* Quick Actions (compact) */}
+              <motion.div initial={{ x: 15, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
+                <Stack spacing={1.5}>
+                  <ActionCard component={RouterLink} to="/recruiter/applicants" sx={{ bgcolor: 'secondary.main', color: 'secondary.contrastText' }}>
+                    <CardContent sx={{ p: 2.25 }}>
                       <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar sx={{ bgcolor: 'white', color: 'secondary.main', width: 40, height: 40 }}>
                           <PeopleOutlineIcon />
+                        </Avatar>
                         <Box>
-                          <Typography variant="body1" fontWeight={600}>View Applicants</Typography>
-                          <Typography variant="body2" sx={{ opacity: 0.8 }}>Review job applications</Typography>
+                          <Typography variant="body1" fontWeight={700}>View Applicants</Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>Review job applications</Typography>
                         </Box>
                       </Box>
                     </CardContent>
-                  </StyledCard>
+                  </ActionCard>
+
+                  <ActionCard component={RouterLink} to="/jobs/new">
+                    <CardContent sx={{ p: 2.25 }}>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', width: 40, height: 40 }}>
+                          <AddCircleOutlineIcon />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body1" fontWeight={700}>Create Job</Typography>
+                          <Typography variant="body2" color="text.secondary">Post a new job opening</Typography>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </ActionCard>
+                </Stack>
               </motion.div>
-              
+
               {/* Top Performing Jobs */}
-              <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}>
-                <StyledCard>
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h6" fontWeight={700} gutterBottom>Top Performing Jobs</Typography>
+              <motion.div initial={{ x: 15, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }}>
+                <BaseCard>
+                  <CardContent sx={{ p: 2.5 }}>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                      Top Performing Jobs
+                    </Typography>
                     {topPerformingJobs.length === 0 ? (
-                      <Typography color="text.secondary" sx={{ py: 2 }}>No job performance data yet</Typography>
+                      <Typography color="text.secondary" sx={{ py: 1 }}>No job performance data yet</Typography>
                     ) : (
-                      <Stack spacing={2}>
+                      <Stack spacing={1.5}>
                         {topPerformingJobs.map((job: JobRow, index: number) => (
-                          <motion.div key={job.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }}>
-                            <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'grey.100' }}>
-                              <Typography variant="body1" fontWeight={600} gutterBottom>{job.title}</Typography>
+                          <motion.div key={job.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                            <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: 'grey.50', border: '1px solid', borderColor: 'divider' }}>
+                              <Typography variant="body1" fontWeight={700} gutterBottom>{job.title}</Typography>
                               <Box display="flex" justifyContent="space-between" alignItems="center">
                                 <Box display="flex" alignItems="center">
                                   <PeopleOutlineIcon sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
                                   <Typography variant="body2">{job.applicationsCount} applications</Typography>
                                 </Box>
-                                <Chip label={`#${index + 1}`} size="small" color="primary" />
+                                <Chip label={`#${index + 1}`} size="small" color="primary" variant="outlined" />
                               </Box>
                             </Box>
                           </motion.div>
@@ -323,42 +380,121 @@ export default function RecruiterDashboard() {
                       </Stack>
                     )}
                   </CardContent>
-                </StyledCard>
+                </BaseCard>
               </motion.div>
 
-              {/* Analytics Insights */}
-              <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.3 }}>
-                <StyledCard>
-                  <CardContent sx={{ p: 3 }}>
-                    <Box display="flex" alignItems="center" gap={1} mb={2}>
+              {/* Quick Insights */}
+              <motion.div initial={{ x: 15, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }}>
+                <BaseCard>
+                  <CardContent sx={{ p: 2.5 }}>
+                    <Box display="flex" alignItems="center" gap={1} mb={1}>
                       <AnalyticsIcon color="primary" />
                       <Typography variant="h6" fontWeight={700}>Quick Insights</Typography>
                     </Box>
-                    <Stack spacing={1.5}>
-                        {quickInsights.map((insight, index) => (
-                            <Box 
-                                key={index} 
-                                sx={{ 
-                                    p: 1.5, 
-                                    borderRadius: 2, 
-                                    bgcolor: insight.color,
-                                    color: 'common.white',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                }}
-                            >
-                                <Typography variant="body2" fontWeight={600}>{insight.label}</Typography>
-                                <Typography variant="body2" fontWeight={700}>{insight.value}</Typography>
-                            </Box>
-                        ))}
+                    <Stack spacing={1.2}>
+                      <Chip
+                        label={`Average applications per job: ${jobs.length > 0 ? Math.round((stats?.totalApplications || 0) / jobs.length) : 0}`}
+                        sx={{ bgcolor: '#43a047', color: 'white', fontWeight: 700 }}
+                      />
+                      <Chip
+                        label={`Average views per job: ${jobs.length > 0 ? Math.round((stats?.totalViews || 0) / jobs.length) : 0}`}
+                        sx={{ bgcolor: '#0288d1', color: 'white', fontWeight: 700 }}
+                      />
+                      <Chip
+                        label={`Overall conversion rate: ${stats?.totalViews > 0 ? ((stats?.totalApplications || 0) / stats.totalViews * 100).toFixed(1) : 0}%`}
+                        sx={{ bgcolor: '#fb8c00', color: 'white', fontWeight: 700 }}
+                      />
                     </Stack>
                   </CardContent>
-                </StyledCard>
+                </BaseCard>
               </motion.div>
             </Stack>
           </Grid>
         </Grid>
+
+        {/* Row 3: Jobs table (full width) */}
+        <Box mt={2}>
+          <motion.div initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.25 }}>
+            <TableCard>
+              <CardContent sx={{ p: 2.5 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom>Your Posted Jobs</Typography>
+                {jobs.length === 0 ? (
+                  <Box sx={{ textAlign: 'center', py: 3 }}>
+                    <WorkIcon sx={{ fontSize: 44, color: 'text.secondary', mb: 1 }} />
+                    <Typography variant="body1" color="text.secondary">No jobs posted yet. Create your first job posting!</Typography>
+                    <Button
+                      variant="contained"
+                      component={RouterLink}
+                      to="/jobs/new"
+                      startIcon={<AddCircleOutlineIcon />}
+                      sx={{ mt: 2 }}
+                    >
+                      Create Job
+                    </Button>
+                  </Box>
+                ) : (
+                  <TableContainer>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Job Title</TableCell>
+                          <TableCell>Applications</TableCell>
+                          <TableCell>Views</TableCell>
+                          <TableCell>Posted Date</TableCell>
+                          <TableCell align="center">Performance</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {jobs.map((job: JobRow, index: number) => {
+                          const conversionRate = job.views > 0 ? ((job.applicationsCount / job.views) * 100).toFixed(1) : '0';
+                          return (
+                            <TableRow
+                              key={job.id}
+                              component={motion.tr}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: index * 0.05 }}
+                            >
+                              <TableCell>
+                                <Typography fontWeight={700}>{job.title}</Typography>
+                                <Typography variant="body2" color="text.secondary">{job.company}</Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Chip label={job.applicationsCount} color="primary" size="small" />
+                              </TableCell>
+                              <TableCell>
+                                <Box display="flex" alignItems="center">
+                                  <VisibilityIcon sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
+                                  <Typography>{job.views}</Typography>
+                                </Box>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {new Date(job.createdAt).toLocaleDateString()}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="center">
+                                <Box display="flex" alignItems="center" justifyContent="center">
+                                  <Typography variant="body2" fontWeight={700} sx={{ mr: 0.5 }}>
+                                    {conversionRate}%
+                                  </Typography>
+                                  {parseFloat(conversionRate) > 5
+                                    ? <ArrowUpwardIcon sx={{ fontSize: 16, color: 'success.main' }} />
+                                    : <ArrowDownwardIcon sx={{ fontSize: 16, color: 'warning.main' }} />
+                                  }
+                                </Box>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                )}
+              </CardContent>
+            </TableCard>
+          </motion.div>
+        </Box>
       </DashboardContainer>
     </motion.div>
   );
