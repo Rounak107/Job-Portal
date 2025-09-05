@@ -48,7 +48,7 @@ const fadeInUp = keyframes`
     transform: translateY(30px);
   }
   to {
-    opacity: 1;
+    opacity: 1);
     transform: translateY(0);
   }
 `;
@@ -62,22 +62,36 @@ const shimmer = keyframes`
   }
 `;
 
-// UPDATED: Replaced animated gradient with a simple, clean background to match the image.
+const gradientShift = keyframes`
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+`;
+
 const DashboardContainer = styled(Container)(({ theme }) => ({
-  backgroundColor: theme.palette.mode === 'light' ? '#f4f6f8' : theme.palette.background.default,
+  background: `linear-gradient(-45deg, ${theme.palette.background.default}, ${theme.palette.action.hover}, ${theme.palette.background.paper})`,
+  backgroundSize: '400% 400%',
+  animation: `${gradientShift} 15s ease infinite`,
   minHeight: '100vh',
   paddingTop: theme.spacing(4),
   paddingBottom: theme.spacing(4),
 }));
 
-// UPDATED: Simplified card styling for a cleaner look.
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 20,
-  boxShadow: theme.shadows[2],
+  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, rgba(255,255,255,0.9) 100%)`,
+  backdropFilter: 'blur(20px)',
+  border: `1px solid ${theme.palette.divider}`,
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   '&:hover': {
     transform: 'translateY(-8px)',
-    boxShadow: theme.shadows[6],
+    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
   }
 }));
 
@@ -107,17 +121,16 @@ const ProfileCard = styled(StyledCard)(({ theme }) => ({
   }
 }));
 
-// UPDATED: Changed background to a vibrant purple gradient to match the image.
 const ActionCard = styled(Card)(({ theme }) => ({
   borderRadius: 16,
-  background: `linear-gradient(135deg, #7B42F6 0%, #B01EFF 100%)`,
-  color: theme.palette.common.white,
+  background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
+  color: theme.palette.secondary.contrastText,
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   cursor: 'pointer',
   textDecoration: 'none',
   '&:hover': {
     transform: 'translateY(-5px) scale(1.05)',
-    boxShadow: '0 15px 35px rgba(123, 66, 246, 0.3)',
+    boxShadow: '0 15px 35px rgba(0,0,0,0.2)',
     textDecoration: 'none',
   }
 }));
@@ -217,7 +230,7 @@ export default function RecruiterDashboard() {
 
   if (loading) {
     return (
-      <DashboardContainer maxWidth={false}>
+      <DashboardContainer maxWidth="xl">
         <StyledCard sx={{ p: 6, textAlign: 'center' }}>
           <Stack alignItems="center" spacing={3}>
             <CircularProgress size={60} thickness={4} />
@@ -233,7 +246,7 @@ export default function RecruiterDashboard() {
 
   if (error) {
     return (
-      <DashboardContainer maxWidth={false}>
+      <DashboardContainer maxWidth="xl">
         <StyledCard sx={{ p: 6, textAlign: 'center' }}>
           <Typography variant="h6" color="error" gutterBottom>
             {error}
@@ -549,62 +562,60 @@ export default function RecruiterDashboard() {
           </Grid>
 
           {/* Right Sidebar */}
-          {/* UPDATED: Added sx prop to make this Grid item sticky on large screens */}
-          <Grid 
-            item 
-            xs={12} 
-            lg={4} 
-            sx={{
-              position: { lg: 'sticky' },
-              top: { lg: '32px' },
-              alignSelf: 'flex-start',
-              height: '100%',
-            }}
-          >
+          <Grid item xs={12} lg={4}>
             <Stack spacing={4}>
-              {/* Quick Actions */}
-              <motion.div
-                initial={{ x: 50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
+              {/* Quick Actions (Sticky on the right for lg+) */}
+              <Box
+                sx={{
+                  position: { xs: 'static', lg: 'sticky' },
+                  top: { lg: 96 }, // adjust if your app bar height differs
+                  zIndex: 2,
+                  alignSelf: { lg: 'flex-start' },
+                }}
               >
-                <Typography variant="h6" fontWeight={700} gutterBottom>
-                  Quick Actions
-                </Typography>
-                <Stack spacing={2}>
-                  <ActionCard component={RouterLink} to="/jobs/new">
-                    <CardContent sx={{ p: 3 }}>
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <AddCircleOutlineIcon sx={{ fontSize: 40 }} />
-                        <Box>
-                          <Typography variant="h6" fontWeight={700}>
-                            Create Job
-                          </Typography>
-                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                            Post a new job opening
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </ActionCard>
+                <motion.div
+                  initial={{ x: 50, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  <Typography variant="h6" fontWeight={700} gutterBottom>
+                    Quick Actions
+                  </Typography>
+                  <Stack spacing={2}>
+                    <ActionCard component={RouterLink} to="/jobs/new">
+                      <CardContent sx={{ p: 3 }}>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <AddCircleOutlineIcon sx={{ fontSize: 40 }} />
+                          <Box>
+                            <Typography variant="h6" fontWeight={700}>
+                              Create Job
+                            </Typography>
+                            <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                              Post a new job opening
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </ActionCard>
 
-                  <ActionCard component={RouterLink} to="/recruiter/applicants">
-                    <CardContent sx={{ p: 3 }}>
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <PeopleOutlineIcon sx={{ fontSize: 40 }} />
-                        <Box>
-                          <Typography variant="h6" fontWeight={700}>
-                            View Applicants
-                          </Typography>
-                          <Typography variant="body2" sx={{ opacity: 0.8 }}>
-                            Review job applications
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </ActionCard>
-                </Stack>
-              </motion.div>
+                    <ActionCard component={RouterLink} to="/recruiter/applicants">
+                      <CardContent sx={{ p: 3 }}>
+                        <Stack direction="row" alignItems="center" spacing={2}>
+                          <PeopleOutlineIcon sx={{ fontSize: 40 }} />
+                          <Box>
+                            <Typography variant="h6" fontWeight={700}>
+                              View Applicants
+                            </Typography>
+                            <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                              Review job applications
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </ActionCard>
+                  </Stack>
+                </motion.div>
+              </Box>
 
               {/* Top Performing Jobs */}
               <motion.div
