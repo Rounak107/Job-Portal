@@ -62,36 +62,22 @@ const shimmer = keyframes`
   }
 `;
 
-const gradientShift = keyframes`
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-`;
-
+// UPDATED: Replaced animated gradient with a simple, clean background to match the image.
 const DashboardContainer = styled(Container)(({ theme }) => ({
-  background: `linear-gradient(-45deg, ${theme.palette.background.default}, ${theme.palette.action.hover}, ${theme.palette.background.paper})`,
-  backgroundSize: '400% 400%',
-  animation: `${gradientShift} 15s ease infinite`,
+  backgroundColor: theme.palette.mode === 'light' ? '#f4f6f8' : theme.palette.background.default,
   minHeight: '100vh',
   paddingTop: theme.spacing(4),
   paddingBottom: theme.spacing(4),
 }));
 
+// UPDATED: Simplified card styling for a cleaner look.
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 20,
-  background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, rgba(255,255,255,0.9) 100%)`,
-  backdropFilter: 'blur(20px)',
-  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: theme.shadows[2],
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   '&:hover': {
     transform: 'translateY(-8px)',
-    boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+    boxShadow: theme.shadows[6],
   }
 }));
 
@@ -121,16 +107,17 @@ const ProfileCard = styled(StyledCard)(({ theme }) => ({
   }
 }));
 
+// UPDATED: Changed background to a vibrant purple gradient to match the image.
 const ActionCard = styled(Card)(({ theme }) => ({
   borderRadius: 16,
-  background: `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.secondary.dark} 100%)`,
-  color: theme.palette.secondary.contrastText,
+  background: `linear-gradient(135deg, #7B42F6 0%, #B01EFF 100%)`,
+  color: theme.palette.common.white,
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   cursor: 'pointer',
   textDecoration: 'none',
   '&:hover': {
     transform: 'translateY(-5px) scale(1.05)',
-    boxShadow: '0 15px 35px rgba(0,0,0,0.2)',
+    boxShadow: '0 15px 35px rgba(123, 66, 246, 0.3)',
     textDecoration: 'none',
   }
 }));
@@ -230,7 +217,7 @@ export default function RecruiterDashboard() {
 
   if (loading) {
     return (
-      <DashboardContainer maxWidth="xl">
+      <DashboardContainer maxWidth={false}>
         <StyledCard sx={{ p: 6, textAlign: 'center' }}>
           <Stack alignItems="center" spacing={3}>
             <CircularProgress size={60} thickness={4} />
@@ -246,7 +233,7 @@ export default function RecruiterDashboard() {
 
   if (error) {
     return (
-      <DashboardContainer maxWidth="xl">
+      <DashboardContainer maxWidth={false}>
         <StyledCard sx={{ p: 6, textAlign: 'center' }}>
           <Typography variant="h6" color="error" gutterBottom>
             {error}
@@ -562,7 +549,18 @@ export default function RecruiterDashboard() {
           </Grid>
 
           {/* Right Sidebar */}
-          <Grid item xs={12} lg={4}>
+          {/* UPDATED: Added sx prop to make this Grid item sticky on large screens */}
+          <Grid 
+            item 
+            xs={12} 
+            lg={4} 
+            sx={{
+              position: { lg: 'sticky' },
+              top: { lg: '32px' },
+              alignSelf: 'flex-start',
+              height: '100%',
+            }}
+          >
             <Stack spacing={4}>
               {/* Quick Actions */}
               <motion.div
