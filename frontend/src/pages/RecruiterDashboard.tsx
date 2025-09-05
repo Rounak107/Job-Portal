@@ -4,7 +4,7 @@ import { api } from '../api';
 import { useAuth } from '../auth/AuthProvider';
 import { Link as RouterLink } from 'react-router-dom';
 import CountUp from 'react-countup';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 import { motion } from 'framer-motion';
 import {
   Box, Paper, Typography, Avatar, Button, Grid, CircularProgress, Divider,
@@ -628,38 +628,39 @@ export default function RecruiterDashboard() {
                     transition={{ duration: 0.8, delay: 0.5 }}
                   >
                     <ChartCard>
-                      <CardContent sx={{ p: 2.5, height: '100%' }}>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                          Performance Overview
-                        </Typography>
-                         <ResponsiveContainer width="100%" height={250}>
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={60}
-                              outerRadius={100}
-                              paddingAngle={5}
-                              dataKey="value"
-                            >
-                              {pieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                        <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
-                          {pieData.map((item, index) => (
-                            <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Box sx={{ width: 12, height: 12, bgcolor: item.color, borderRadius: '50%' }} />
-                              <Typography variant="caption">{item.name}</Typography>
-                            </Box>
-                          ))}
-                        </Stack>
-                      </CardContent>
-                    </ChartCard>
+  <CardContent sx={{ p: 2.5, height: '100%' }}>
+    <Typography variant="h6" fontWeight={600} gutterBottom>
+      Performance Overview
+    </Typography>
+
+    <ResponsiveContainer width="100%" height={300}>
+      <PieChart>
+        <Pie
+          data={pieData}
+          cx="50%"
+          cy="45%" 
+          innerRadius={60}
+          outerRadius={90}
+          paddingAngle={5}
+          dataKey="value"
+          nameKey="name"
+        >
+          {pieData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={entry.color} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend
+          verticalAlign="bottom"
+          align="center"
+          layout="horizontal"
+          iconType="circle"
+          wrapperStyle={{ marginTop: 8, fontSize: '0.85rem' }}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  </CardContent>
+</ChartCard>
                   </motion.div>
                 </Grid>
               </Grid>
