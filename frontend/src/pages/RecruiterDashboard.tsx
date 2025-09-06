@@ -137,7 +137,7 @@ const ActionCard = styled(Card)(({ theme }) => ({
 }));
 
 const ChartCard = styled(StyledCard)(({ theme }) => ({
-  height: 320,
+  height: 380,
   '& .recharts-cartesian-grid-horizontal line': {
     stroke: theme.palette.divider,
   },
@@ -582,7 +582,7 @@ export default function RecruiterDashboard() {
                         <Typography variant="h6" fontWeight={600} gutterBottom>
                           Views & Applications Trend
                         </Typography>
-                        <ResponsiveContainer width="100%" height={250}>
+                        <ResponsiveContainer width="100%" height={210}>
                           <AreaChart data={combinedData}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
@@ -633,12 +633,12 @@ export default function RecruiterDashboard() {
       Performance Overview
     </Typography>
 
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height={220}>
       <PieChart>
         <Pie
           data={pieData}
           cx="50%"
-          cy="45%"
+          cy="40%" // push up for legend
           innerRadius={60}
           outerRadius={90}
           paddingAngle={5}
@@ -656,10 +656,7 @@ export default function RecruiterDashboard() {
     {/* Manual legend BELOW the chart */}
     <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
       {pieData.map((item, index) => (
-        <Box
-          key={index}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-        >
+        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box
             sx={{
               width: 12,
