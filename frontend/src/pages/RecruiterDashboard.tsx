@@ -627,21 +627,20 @@ export default function RecruiterDashboard() {
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.8, delay: 0.5 }}
                   >
-                   <ChartCard>
+                    <ChartCard>
   <CardContent sx={{ p: 2.5, height: '100%' }}>
-    <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3 }}>
+    <Typography variant="h6" fontWeight={600} gutterBottom>
       Performance Overview
     </Typography>
 
-    {/* Add more vertical space for a larger chart */}
-    <ResponsiveContainer width="100%" height={280}>
+    <ResponsiveContainer width="100%" height={240}>
       <PieChart>
         <Pie
           data={pieData}
           cx="50%"
-          cy="50%" // center chart vertically
-          innerRadius={70} // thicker donut
-          outerRadius={120} // bigger pie
+          cy="50%" // push up for legend
+          innerRadius={70}
+          outerRadius={100}
           paddingAngle={5}
           dataKey="value"
           nameKey="name"
@@ -654,22 +653,14 @@ export default function RecruiterDashboard() {
       </PieChart>
     </ResponsiveContainer>
 
-    {/* Manual legend BELOW the chart with extra margin */}
-    <Stack
-      direction="row"
-      spacing={2}
-      justifyContent="center"
-      mt={3} // increase margin-top
-    >
+    {/* Manual legend BELOW the chart */}
+    <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
       {pieData.map((item, index) => (
-        <Box
-          key={index}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-        >
+        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box
             sx={{
-              width: 14,
-              height: 14,
+              width: 12,
+              height: 12,
               bgcolor: item.color,
               borderRadius: '50%',
             }}
