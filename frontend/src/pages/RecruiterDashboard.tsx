@@ -137,7 +137,7 @@ const ActionCard = styled(Card)(({ theme }) => ({
 }));
 
 const ChartCard = styled(StyledCard)(({ theme }) => ({
-  height: 370,
+  height: 340,
   '& .recharts-cartesian-grid-horizontal line': {
     stroke: theme.palette.divider,
   },
