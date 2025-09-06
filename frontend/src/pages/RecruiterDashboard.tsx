@@ -639,8 +639,8 @@ export default function RecruiterDashboard() {
           data={pieData}
           cx="50%"
           cy="50%" // push up for legend
-          innerRadius={70}
-          outerRadius={100}
+          innerRadius={60}
+          outerRadius={110}
           paddingAngle={5}
           dataKey="value"
           nameKey="name"
