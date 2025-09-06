@@ -137,7 +137,7 @@ const ActionCard = styled(Card)(({ theme }) => ({
 }));
 
 const ChartCard = styled(StyledCard)(({ theme }) => ({
-  height: 350,
+  height: 340,
   '& .recharts-cartesian-grid-horizontal line': {
     stroke: theme.palette.divider,
   },
@@ -582,7 +582,7 @@ export default function RecruiterDashboard() {
                         <Typography variant="h6" fontWeight={600} gutterBottom>
                           Views & Applications Trend
                         </Typography>
-                        <ResponsiveContainer width="100%" height={280}>
+                        <ResponsiveContainer width="100%" height={260}>
                           <AreaChart data={combinedData}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
