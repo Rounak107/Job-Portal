@@ -633,12 +633,12 @@ export default function RecruiterDashboard() {
       Performance Overview
     </Typography>
 
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer width="100%" height={240}>
       <PieChart>
         <Pie
           data={pieData}
           cx="50%"
-          cy="45%" 
+          cy="45%"
           innerRadius={60}
           outerRadius={90}
           paddingAngle={5}
@@ -650,15 +650,28 @@ export default function RecruiterDashboard() {
           ))}
         </Pie>
         <Tooltip />
-        <Legend
-          verticalAlign="bottom"
-          align="center"
-          layout="horizontal"
-          iconType="circle"
-          wrapperStyle={{ marginTop: 8, fontSize: '0.85rem' }}
-        />
       </PieChart>
     </ResponsiveContainer>
+
+    {/* Manual legend BELOW the chart */}
+    <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
+      {pieData.map((item, index) => (
+        <Box
+          key={index}
+          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+        >
+          <Box
+            sx={{
+              width: 12,
+              height: 12,
+              bgcolor: item.color,
+              borderRadius: '50%',
+            }}
+          />
+          <Typography variant="caption">{item.name}</Typography>
+        </Box>
+      ))}
+    </Stack>
   </CardContent>
 </ChartCard>
                   </motion.div>
