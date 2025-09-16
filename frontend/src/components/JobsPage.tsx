@@ -940,11 +940,11 @@ export default function JobsPage() {
                   backdropFilter: 'blur(20px)',
                   boxShadow: '0 5px 20px rgba(0,0,0,0.08)',
                 }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-                        {total} Jobs Found
-                      </Typography>
+                  <Stack direction="row" justifyContent="flex-end" alignItems="center" sx={{ width: '100%' }}>
+  <Stack direction="row" spacing={2} alignItems="center">
+    <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
+      {total} Jobs Found
+    </Typography>
                       {loading && (
                         <Box sx={{
                           width: 30,
@@ -963,7 +963,7 @@ export default function JobsPage() {
                     </Stack>
 
                     {/* RIGHT SIDE: Saved button with badge */}
-                    <Stack direction="row" spacing={2} alignItems="center">
+                   <Stack direction="row" spacing={2} alignItems="center" sx={{ ml: 3 }}>
                       <Button
                         component={Link}
                         to="/saved-jobs"
@@ -984,8 +984,8 @@ export default function JobsPage() {
                       >
                         Saved
                       </Button>
-                      <Typography variant="body2" color="text.secondary">
-                        Page {page} of {totalPages}
+                       <Typography variant="body2" color="text.secondary">
+      Page {page} of {totalPages}
                       </Typography>
                     </Stack>
                   </Stack>
