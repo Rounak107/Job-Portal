@@ -39,6 +39,7 @@ import {
   DialogActions,
   Slide,
   Fab,
+  Collapse,
 } from '@mui/material';
 
 import SearchIcon from '@mui/icons-material/Search';
@@ -61,6 +62,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import TuneIcon from '@mui/icons-material/Tune';
 import CategoryIcon from '@mui/icons-material/Category';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { TransitionProps } from '@mui/material/transitions';
 import { keyframes } from '@mui/system';
 
@@ -215,6 +218,9 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
+
+  // Filter expand state
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Saved jobs set (persisted)
   const [savedJobs, setSavedJobs] = useState<number[]>(() => {
@@ -453,13 +459,13 @@ export default function JobsPage() {
                     onClose();
                   }}
                   sx={{
-  py: 3,
-  justifyContent: 'flex-start',
-  background: workMode === wm ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
-  color: workMode === wm ? '#fff' : 'inherit', // ← Fixed this line
-  border: '1px solid',
-  borderColor: workMode === wm ? 'transparent' : theme.palette.divider,
-}}
+                    py: 3,
+                    justifyContent: 'flex-start',
+                    background: workMode === wm ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+                    color: workMode === wm ? '#fff' : 'inheritros',
+                    border: '1px solid',
+                    borderColor: workMode === wm ? 'transparent' : theme.palette.divider,
+                  }}
                 />
               ))}
             </Stack>
@@ -525,7 +531,7 @@ export default function JobsPage() {
     );
   };
 
-  // Desktop Filters Sidebar
+  // Horizontal Filters Component
   const HorizontalFilters = () => (
     <Paper sx={{
       p: 3,
@@ -536,19 +542,55 @@ export default function JobsPage() {
       boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
       border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
     }}>
-      <Stack spacing={2.5}>
+      <Stack spacing={3}>
+        {/* Filter Header */}
         <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Stack direction="row" spacing={1} alignItems="center">
-            <FilterListIcon sx={{ color: theme.palette.primary.main }} />
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              Filters
-            </Typography>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={1} alignItems="center">
+              <FilterListIcon sx={{ color: theme.palette.primary.main }} />
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Filters
+              </Typography>
+            </Stack>
+            {activeFiltersCount > 0 && (
+              <Badge badgeContent={activeFiltersCount} color="primary" />
+            )}
           </Stack>
-          {activeFiltersCount > 0 && (
-            <Badge badgeContent={activeFiltersCount} color="primary" />
-          )}
+
+          <Stack direction="row" spacing={2}>
+            {!isMobile && (
+              <Button
+                variant="outlined"
+                onClick={() => setFiltersExpanded(!filtersExpanded)}
+                startIcon={filtersExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                sx={{
+                  borderRadius: 3,
+                  borderColor: theme.palette.divider,
+                }}
+              >
+                {filtersExpanded ? 'Less Filters' : 'More Filters'}
+              </Button>
+            )}
+            
+            <Button
+              variant="outlined"
+              onClick={clearFilters}
+              startIcon={<ClearIcon />}
+              sx={{
+                borderRadius: 3,
+                borderColor: theme.palette.divider,
+                '&:hover': {
+                  borderColor: theme.palette.primary.main,
+                  background: alpha(theme.palette.primary.main, 0.05),
+                },
+              }}
+            >
+              Clear All
+            </Button>
+          </Stack>
         </Stack>
 
+        {/* Quick Filters Row - Always Visible */}
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
@@ -560,7 +602,7 @@ export default function JobsPage() {
                 sx={{ borderRadius: 3 }}
               >
                 <MenuItem value="">All companies</MenuItem>
-                {companies.map((c) => (
+                {companies.slice(0, 10).map((c) => (
                   <MenuItem key={c} value={c}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       <BusinessIcon fontSize="small" />
@@ -582,7 +624,7 @@ export default function JobsPage() {
                 sx={{ borderRadius: 3 }}
               >
                 <MenuItem value="">All locations</MenuItem>
-                {locations.map((l) => (
+                {locations.slice(0, 10).map((l) => (
                   <MenuItem key={l} value={l}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       <LocationOnIcon fontSize="small" />
@@ -604,7 +646,7 @@ export default function JobsPage() {
                 sx={{ borderRadius: 3 }}
               >
                 <MenuItem value="">All roles</MenuItem>
-                {roles.map((r) => (
+                {roles.slice(0, 10).map((r) => (
                   <MenuItem key={r} value={r}>
                     <Stack direction="row" spacing={1} alignItems="center">
                       <WorkIcon fontSize="small" />
@@ -637,106 +679,72 @@ export default function JobsPage() {
               </Select>
             </FormControl>
           </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              label="Min salary"
-              type="number"
-              value={minSalary}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === '' || /^[0-9]*$/.test(value)) {
-                  setMinSalary(value);
-                }
-              }}
-              fullWidth
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <CurrencyRupeeIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-                inputProps: { min: 0, step: 1 },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 3,
-                },
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              label="Max salary"
-              type="number"
-              value={maxSalary}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === '' || /^[0-9]*$/.test(value)) {
-                  setMaxSalary(value);
-                }
-              }}
-              fullWidth
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <CurrencyRupeeIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-                inputProps: { min: 0, step: 1 },
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 3,
-                },
-              }}
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={() => loadJobs(1)}
-              sx={{
-                borderRadius: 3,
-                py: 1.2,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                boxShadow: '0 4px 15px rgba(102,126,234,0.4)',
-                '&:hover': {
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 6px 20px rgba(102,126,234,0.6)',
-                },
-                transition: 'all 0.3s ease',
-              }}
-            >
-              Apply Filters
-            </Button>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={3}>
-            <Button
-              variant="outlined"
-              fullWidth
-              onClick={clearFilters}
-              startIcon={<ClearIcon />}
-              sx={{
-                borderRadius: 3,
-                py: 1.2,
-                borderColor: theme.palette.divider,
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  background: alpha(theme.palette.primary.main, 0.05),
-                },
-              }}
-            >
-              Clear All
-            </Button>
-          </Grid>
         </Grid>
+
+        {/* Expandable Filters - Salary Range */}
+        <Collapse in={filtersExpanded || isMobile}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2}>
+                Salary Range
+              </Typography>
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  label="Min salary"
+                  type="number"
+                  value={minSalary}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^[0-9]*$/.test(value)) {
+                      setMinSalary(value);
+                    }
+                  }}
+                  fullWidth
+                  size="small"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <CurrencyRupeeIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                    inputProps: { min: 0, step: 1 },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                    },
+                  }}
+                />
+                <TextField
+                  label="Max salary"
+                  type="number"
+                  value={maxSalary}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === '' || /^[0-9]*$/.test(value)) {
+                      setMaxSalary(value);
+                    }
+                  }}
+                  fullWidth
+                  size="small"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <CurrencyRupeeIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                    inputProps: { min: 0, step: 1 },
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                    },
+                  }}
+                />
+              </Stack>
+            </Grid>
+          </Grid>
+        </Collapse>
       </Stack>
     </Paper>
   );
@@ -908,378 +916,375 @@ export default function JobsPage() {
         </Container>
       </Box>
     
-       <Container maxWidth="xl" sx={{ px: { xs: 2, md: 3 } }}>
-        {/* Horizontal Filters for Desktop */}
+      <Container maxWidth="xl" sx={{ px: { xs: 2, md: 3 } }}>
+        {/* Horizontal Filters - Hidden on Mobile */}
         {!isMobile && (
-          <Fade in timeout={500}>
-            <HorizontalFilters />
-          </Fade>
+          <Zoom in timeout={500}>
+            <Box>
+              <HorizontalFilters />
+            </Box>
+          </Zoom>
         )}
 
         {/* Job Listings */}
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Stack spacing={3}>
-              {/* Results Header */}
-              <Fade in timeout={700}>
-                <Paper sx={{
-                  p: { xs: 2, md: 3 },
-                  borderRadius: 4,
-                  background: 'rgba(255,255,255,0.98)',
-                  backdropFilter: 'blur(20px)',
-                  boxShadow: '0 5px 20px rgba(0,0,0,0.08)',
-                }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-                        {total} Jobs Found
-                      </Typography>
-                      {loading && (
-                        <Box sx={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: '50%',
-                          border: '3px solid',
-                          borderColor: theme.palette.primary.main,
-                          borderTopColor: 'transparent',
-                          animation: 'spin 1s linear infinite',
-                          '@keyframes spin': {
-                            '0%': { transform: 'rotate(0deg)' },
-                            '100%': { transform: 'rotate(360deg)' },
-                          },
-                        }} />
-                      )}
-                    </Stack>
-
-                    {/* RIGHT SIDE: Saved button with badge */}
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Button
-                        component={Link}
-                        to="/saved-jobs"
-                        variant="outlined"
-                        startIcon={
-                          <Badge badgeContent={savedJobs.length} color="primary">
-                            <BookmarkIcon />
-                          </Badge>
-                        }
-                        sx={{
-                          borderRadius: 3,
-                          borderColor: theme.palette.divider,
-                          '&:hover': {
-                            borderColor: theme.palette.primary.main,
-                            background: alpha(theme.palette.primary.main, 0.05),
-                          },
-                        }}
-                      >
-                        Saved
-                      </Button>
-                      <Typography variant="body2" color="text.secondary">
-                        Page {page} of {totalPages}
-                      </Typography>
-                    </Stack>
-                  </Stack>
-                </Paper>
-              </Fade>
-
-              {/* Job Cards */}
-              {loading ? (
-                <>
-                  <JobSkeleton />
-                  <JobSkeleton />
-                  <JobSkeleton />
-                </>
-              ) : jobs.length === 0 ? (
-                <Fade in timeout={500}>
-                  <Paper sx={{
-                    p: { xs: 4, md: 8 },
-                    textAlign: 'center',
-                    borderRadius: 4,
-                    background: 'rgba(255,255,255,0.98)',
-                    backdropFilter: 'blur(20px)',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
-                  }}>
+        <Stack spacing={3}>
+          {/* Results Header */}
+          <Fade in timeout={700}>
+            <Paper sx={{
+              p: { xs: 2, md: 3 },
+              borderRadius: 4,
+              background: 'rgba(255,255,255,0.98)',
+              backdropFilter: 'blur(20px)',
+              boxShadow: '0 5px 20px rgba(0,0,0,0.08)',
+            }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
+                    {total} Jobs Found
+                  </Typography>
+                  {loading && (
                     <Box sx={{
-                      width: { xs: 80, md: 120 },
-                      height: { xs: 80, md: 120 },
-                      margin: '0 auto 2rem',
+                      width: 30,
+                      height: 30,
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      animation: `${float} 3s ease-in-out infinite`,
-                    }}>
-                      <WorkIcon sx={{ fontSize: { xs: 40, md: 60 }, color: '#fff' }} />
-                    </Box>
-                    <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700} gutterBottom>
-                      No jobs match your filters
-                    </Typography>
-                    <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                      Try adjusting your search criteria or clearing filters to see more results.
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={clearFilters}
-                      sx={{
-                        borderRadius: 3,
-                        px: 4,
-                        py: 1.5,
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        boxShadow: '0 4px 15px rgba(102,126,234,0.4)',
-                        '&:hover': {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 6px 20px rgba(102,126,234,0.6)',
+                      border: '3px solid',
+                      borderColor: theme.palette.primary.main,
+                      borderTopColor: 'transparent',
+                      animation: 'spin 1s linear infinite',
+                      '@keyframes spin': {
+                        '0%': { transform: 'rotate(0deg)' },
+                        '100%': { transform: 'rotate(360deg)' },
+                      },
+                    }} />
+                  )}
+                </Stack>
+
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Button
+                    component={Link}
+                    to="/saved-jobs"
+                    variant="outlined"
+                    startIcon={
+                      <Badge badgeContent={savedJobs.length} color="primary">
+                        <BookmarkIcon />
+                      </Badge>
+                    }
+                    sx={{
+                      borderRadius: 3,
+                      borderColor: theme.palette.divider,
+                      '&:hover': {
+                        borderColor: theme.palette.primary.main,
+                        background: alpha(theme.palette.primary.main, 0.05),
+                      },
+                    }}
+                  >
+                    Saved
+                  </Button>
+                  <Typography variant="body2" color="text.secondary">
+                    Page {page} of {totalPages}
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Paper>
+          </Fade>
+
+          {/* Job Cards */}
+          {loading ? (
+            <>
+              <JobSkeleton />
+              <JobSkeleton />
+              <JobSkeleton />
+            </>
+          ) : jobs.length === 0 ? (
+            <Fade in timeout={500}>
+              <Paper sx={{
+                p: { xs: 4, md: 8 },
+                textAlign: 'center',
+                borderRadius: 4,
+                background: 'rgba(255,255,255,0.98)',
+                backdropFilter: 'blur(20px)',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+              }}>
+                <Box sx={{
+                  width: { xs: 80, md: 120 },
+                  height: { xs: 80, md: 120 },
+                  margin: '0 auto 2rem',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  animation: `${float} 3s ease-in-out infinite`,
+                }}>
+                  <WorkIcon sx={{ fontSize: { xs: 40, md: 60 }, color: '#fff' }} />
+                </Box>
+                <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700} gutterBottom>
+                  No jobs match your filters
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                  Try adjusting your search criteria or clearing filters to see more results.
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={clearFilters}
+                  sx={{
+                    borderRadius: 3,
+                    px: 4,
+                    py: 1.5,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    boxShadow: '0 4px 15px rgba(102,126,234,0.4)',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 6px 20px rgba(102,126,234,0.6)',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </Paper>
+            </Fade>
+          ) : (
+            jobs.map((job, index) => {
+              const postedDate = job.createdAt || job.postedAt || null;
+
+              return (
+                <Grow in timeout={500 + index * 100} key={job.id}>
+                  <Card
+                    sx={{
+                      borderRadius: 4,
+                      overflow: 'hidden',
+                      position: 'relative',
+                      background: 'rgba(255,255,255,0.98)',
+                      backdropFilter: 'blur(20px)',
+                      boxShadow: '0 5px 20px rgba(0,0,0,0.08)',
+                      transition: 'all 0.3s ease',
+                      animation: `${fadeIn} 0.5s ease-out`,
+                      border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
+                      '&:hover': {
+                        transform: { xs: 'none', md: 'translateY(-5px)' },
+                        boxShadow: '0 15px 40px rgba(0,0,0,0.12)',
+                        borderColor: alpha(theme.palette.primary.main, 0.2),
+                        '& .job-arrow': {
+                          transform: 'translateX(5px)',
                         },
-                        transition: 'all 0.3s ease',
-                      }}
-                    >
-                      Clear Filters
-                    </Button>
-                  </Paper>
-                </Fade>
-              ) : (
-                jobs.map((job, index) => {
-                  const postedDate = job.createdAt || job.postedAt || null;
-
-                  return (
-                    <Grow in timeout={500 + index * 100} key={job.id}>
-                      <Card
-                        sx={{
-                          borderRadius: 4,
-                          overflow: 'hidden',
-                          position: 'relative',
-                          background: 'rgba(255,255,255,0.98)',
-                          backdropFilter: 'blur(20px)',
-                          boxShadow: '0 5px 20px rgba(0,0,0,0.08)',
-                          transition: 'all 0.3s ease',
-                          animation: `${fadeIn} 0.5s ease-out`,
-                          border: `1px solid ${alpha(theme.palette.primary.main, 0.08)}`,
-                          '&:hover': {
-                            transform: { xs: 'none', md: 'translateY(-5px)' },
-                            boxShadow: '0 15px 40px rgba(0,0,0,0.12)',
-                            borderColor: alpha(theme.palette.primary.main, 0.2),
-                            '& .job-arrow': {
-                              transform: 'translateX(5px)',
-                            },
-                            '& .job-gradient': {
-                              opacity: 1,
-                            },
-                          },
-                        }}
-                      >
-                        {/* Gradient overlay on hover */}
-                        <Box
-                          className="job-gradient"
-                          sx={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: '4px',
-                            background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                            opacity: 0,
-                            transition: 'opacity 0.3s ease',
-                          }}
-                        />
-
-                        <CardActionArea component={Link} to={`/jobs/${job.id}_${slugify(job.title)}`}>
-                          <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                            <Stack spacing={2}>
-                              {/* Header with title and save button */}
-                              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                                <Box flex={1}>
-                                  <Typography
-                                    variant={isMobile ? "h6" : "h5"}
-                                    fontWeight={800}
-                                    gutterBottom
-                                    sx={{
-                                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                      backgroundClip: 'text',
-                                      WebkitBackgroundClip: 'text',
-                                      WebkitTextFillColor: 'transparent',
-                                    }}
-                                  >
-                                    {job.title}
-                                  </Typography>
-
-                                  <Stack 
-                                    direction={{ xs: 'column', sm: 'row' }} 
-                                    spacing={{ xs: 1, sm: 3 }} 
-                                    alignItems={{ xs: 'flex-start', sm: 'center' }}
-                                    flexWrap="wrap"
-                                  >
-                                    <Stack direction="row" spacing={0.5} alignItems="center">
-                                      <BusinessIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
-                                      <Typography variant="body2" fontWeight={600}>
-                                        {job.company}
-                                      </Typography>
-                                    </Stack>
-
-                                    <Stack direction="row" spacing={0.5} alignItems="center">
-                                      <LocationOnIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
-                                      <Typography variant="body2" color="text.secondary">
-                                        {job.location}
-                                      </Typography>
-                                    </Stack>
-
-                                    {job.role && (
-                                      <Stack direction="row" spacing={0.5} alignItems="center">
-                                        <WorkIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
-                                        <Typography variant="body2" color="text.secondary">
-                                          {job.role}
-                                        </Typography>
-                                      </Stack>
-                                    )}
-                                  </Stack>
-                                </Box>
-
-                                <Tooltip title={isJobSaved(job.id) ? 'Saved' : 'Save job'}>
-                                  <IconButton
-                                    aria-label={isJobSaved(job.id) ? 'Unsave job' : 'Save job'}
-                                    aria-pressed={isJobSaved(job.id)}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      toggleSaveJob(job.id);
-                                    }}
-                                    sx={{ color: isJobSaved(job.id) ? "primary.main" : "grey.500" }}
-                                  >
-                                    {isJobSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-
-                              {/* Tags */}
-                              <Stack 
-                                direction="row" 
-                                spacing={1} 
-                                alignItems="center" 
-                                flexWrap="wrap"
-                                sx={{ gap: 1 }}
-                              >
-                                {job.workMode && (
-                                  <Chip
-                                    icon={WORK_MODE_ICONS[job.workMode]}
-                                    label={WORK_MODE_LABEL[job.workMode] || job.workMode}
-                                    size="small"
-                                    sx={{
-                                      borderRadius: 3,
-                                      background: alpha(theme.palette.primary.main, 0.1),
-                                      border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                                      '& .MuiChip-icon': {
-                                        color: theme.palette.primary.main,
-                                      },
-                                    }}
-                                  />
-                                )}
-                                <Chip
-                                  icon={<CurrencyRupeeIcon />}
-                                  label={`${currency(job.salaryMin)}${job.salaryMax ? ` – ${currency(job.salaryMax)}` : ''}`}
-                                  size="small"
-                                  sx={{
-                                    borderRadius: 3,
-                                    background: alpha(theme.palette.success.main, 0.1),
-                                    border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
-                                    '& .MuiChip-icon': {
-                                      color: theme.palette.success.main,
-                                    },
-                                  }}
-                                />
-                                <Chip
-                                  icon={<AccessTimeIcon />}
-                                  label={postedDate ? timeAgo(postedDate) : '—'}
-                                  size="small"
-                                  sx={{
-                                    borderRadius: 3,
-                                    background: alpha(theme.palette.info.main, 0.1),
-                                    border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
-                                    '& .MuiChip-icon': {
-                                      color: theme.palette.info.main,
-                                    },
-                                  }}
-                                />
-                              </Stack>
-
-                              {/* Description */}
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                                sx={{
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: { xs: 2, md: 3 },
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                  lineHeight: 1.6,
-                                }}
-                              >
-                                {job.description}
-                              </Typography>
-
-                              {/* Action */}
-                              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                <Typography
-                                  variant="body2"
-                                  sx={{
-                                    color: theme.palette.primary.main,
-                                    fontWeight: 600,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                  }}
-                                >
-                                  View Details
-                                  <ArrowForwardIcon
-                                    className="job-arrow"
-                                    fontSize="small"
-                                    sx={{ transition: 'transform 0.3s ease' }}
-                                  />
-                                </Typography>
-                              </Stack>
-                            </Stack>
-                          </CardContent>
-                        </CardActionArea>
-                      </Card>
-                    </Grow>
-                  );
-                })
-              )}
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <Fade in timeout={800}>
-                  <Stack alignItems="center" mt={4}>
-                    <Pagination
-                      count={totalPages}
-                      page={page}
-                      onChange={(_, p) => {
-                        setPage(p);
-                        loadJobs(p);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      shape="rounded"
-                      size={isMobile ? "medium" : "large"}
-                      sx={{
-                        '& .MuiPaginationItem-root': {
-                          borderRadius: 3,
-                          '&:hover': {
-                            background: alpha(theme.palette.primary.main, 0.1),
-                          },
-                          '&.Mui-selected': {
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: '#fff',
-                            '&:hover': {
-                              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            },
-                          },
+                        '& .job-gradient': {
+                          opacity: 1,
                         },
+                      },
+                    }}
+                  >
+                    {/* Gradient overlay on hover */}
+                    <Box
+                      className="job-gradient"
+                      sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '4px',
+                        background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease',
                       }}
                     />
-                  </Stack>
-                </Fade>
-              )}
-            </Stack>
-          </Grid>
-        </Grid>
+
+                    <CardActionArea component={Link} to={`/jobs/${job.id}_${slugify(job.title)}`}>
+                      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                        <Stack spacing={2}>
+                          {/* Header with title and save button */}
+                          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                            <Box flex={1}>
+                              <Typography
+                                variant={isMobile ? "h6" : "h5"}
+                                fontWeight={800}
+                                gutterBottom
+                                sx={{
+                                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                  backgroundClip: 'text',
+                                  WebkitBackgroundClip: 'text',
+                                  WebkitTextFillColor: 'transparent',
+                                }}
+                              >
+                                {job.title}
+                              </Typography>
+
+                              <Stack 
+                                direction={{ xs: 'column', sm: 'row' }} 
+                                spacing={{ xs: 1, sm: 3 }} 
+                                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                flexWrap="wrap"
+                              >
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                  <BusinessIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {job.company}
+                                  </Typography>
+                                </Stack>
+
+                                <Stack direction="row" spacing={0.5} alignItems="center">
+                                  <LocationOnIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                                  <Typography variant="body2" color="text.secondary">
+                                    {job.location}
+                                  </Typography>
+                                </Stack>
+
+                                {job.role && (
+                                  <Stack direction="row" spacing={0.5} alignItems="center">
+                                    <WorkIcon fontSize="small" sx={{ color: theme.palette.text.secondary }} />
+                                    <Typography variant="body2" color="text.secondary">
+                                      {job.role}
+                                    </Typography>
+                                  </Stack>
+                                )}
+                              </Stack>
+                            </Box>
+
+                            <Tooltip title={isJobSaved(job.id) ? 'Saved' : 'Save job'}>
+                              <IconButton
+                                aria-label={isJobSaved(job.id) ? 'Unsave job' : 'Save job'}
+                                aria-pressed={isJobSaved(job.id)}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  toggleSaveJob(job.id);
+                                }}
+                                sx={{ color: isJobSaved(job.id) ? "primary.main" : "grey.500" }}
+                              >
+                                {isJobSaved(job.id) ? <BookmarkIcon /> : <BookmarkBorderIcon />}
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+
+                          {/* Tags */}
+                          <Stack 
+                            direction="row" 
+                            spacing={1} 
+                            alignItems="center" 
+                            flexWrap="wrap"
+                            sx={{ gap: 1 }}
+                          >
+                            {job.workMode && (
+                              <Chip
+                                icon={WORK_MODE_ICONS[job.workMode]}
+                                label={WORK_MODE_LABEL[job.workMode] || job.workMode}
+                                size="small"
+                                sx={{
+                                  borderRadius: 3,
+                                  background: alpha(theme.palette.primary.main, 0.1),
+                                  border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                                  '& .MuiChip-icon': {
+                                    color: theme.palette.primary.main,
+                                  },
+                                }}
+                              />
+                            )}
+                            <Chip
+                              icon={<CurrencyRupeeIcon />}
+                              label={`${currency(job.salaryMin)}${job.salaryMax ? ` – ${currency(job.salaryMax)}` : ''}`}
+                              size="small"
+                              sx={{
+                                borderRadius: 3,
+                                background: alpha(theme.palette.success.main, 0.1),
+                                border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
+                                '& .MuiChip-icon': {
+                                  color: theme.palette.success.main,
+                                },
+                              }}
+                            />
+                            <Chip
+                              icon={<AccessTimeIcon />}
+                              label={postedDate ? timeAgo(postedDate) : '—'}
+                              size="small"
+                              sx={{
+                                borderRadius: 3,
+                                background: alpha(theme.palette.info.main, 0.1),
+                                border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                                '& .MuiChip-icon': {
+                                  color: theme.palette.info.main,
+                                },
+                              }}
+                            />
+                          </Stack>
+
+                          {/* Description */}
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                              display: '-webkit-box',
+                              WebkitLineClamp: { xs: 2, md: 3 },
+                              WebkitBoxOrient: 'vertical',
+                              overflow: 'hidden',
+                              lineHeight: 1.6,
+                            }}
+                          >
+                            {job.description}
+                          </Typography>
+
+                          {/* Action */}
+                          <Stack direction="row" justifyContent="space-between" alignItems="center">
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: theme.palette.primary.main,
+                                fontWeight: 600,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                              }}
+                            >
+                              View Details
+                              <ArrowForwardIcon
+                                className="job-arrow"
+                                fontSize="small"
+                                sx={{ transition: 'transform 0.3s ease' }}
+                              />
+                            </Typography>
+                          </Stack>
+                        </Stack>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                </Grow>
+              );
+            })
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Fade in timeout={800}>
+              <Stack alignItems="center" mt={4}>
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(_, p) => {
+                    setPage(p);
+                    loadJobs(p);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  shape="rounded"
+                  size={isMobile ? "medium" : "large"}
+                  sx={{
+                    '& .MuiPaginationItem-root': {
+                      borderRadius: 3,
+                      '&:hover': {
+                        background: alpha(theme.palette.primary.main, 0.1),
+                      },
+                      '&.Mui-selected': {
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: '#fff',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        },
+                      },
+                    },
+                  }}
+                />
+              </Stack>
+            </Fade>
+          )}
+        </Stack>
       </Container>
 
       {/* Mobile Bottom Navigation */}
