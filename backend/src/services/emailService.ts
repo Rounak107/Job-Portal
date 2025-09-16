@@ -9,7 +9,7 @@ const SMTP_HOST = process.env.SMTP_HOST || '';
 const SMTP_PORT = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 2525;
 const SMTP_USER = process.env.SMTP_USER || '';
 const SMTP_PASS = process.env.SMTP_PASS || '';
-const FROM_EMAIL = process.env.FROM_EMAIL || 'Job Portal <no-reply@example.local>';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'Job Run <no-reply@example.local>';
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
 const BACKEND_BASE_URL  = process.env.BACKEND_BASE_URL  || 'http://localhost:5000';
 
@@ -155,7 +155,7 @@ async function emailWorker() {
 export function sendWelcomeEmail(to: string, name?: string) {
   return enqueueEmail({
     to,
-    subject: `Welcome to JobNow`,
+    subject: `Welcome to JobRun`,
     template: 'welcome',
     context: { name, baseUrl: FRONTEND_BASE_URL }, 
   });
@@ -178,7 +178,7 @@ export function sendApplicantEmail(
 export function sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
   return enqueueEmail({
     to,
-    subject: `Reset your JobPortal password`,
+    subject: `Reset your JobRun password`,
     template: 'passwordReset',
     context: { name, resetUrl },
     maxAttempts: 3,

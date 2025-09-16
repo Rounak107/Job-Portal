@@ -1161,70 +1161,76 @@ export default function JobsPage() {
                               </Stack>
 
                               {/* Tags */}
-                              <Stack 
-                                direction="row" 
-                                spacing={1} 
-                                alignItems="center" 
-                                flexWrap="wrap"
-                                sx={{ gap: 1 }}
-                              >
-                                {job.workMode && (
-                                  <Chip
-                                    icon={WORK_MODE_ICONS[job.workMode]}
-                                    label={WORK_MODE_LABEL[job.workMode] || job.workMode}
-                                    size="small"
-                                    sx={{
-                                      borderRadius: 3,
-                                      background: alpha(theme.palette.primary.main, 0.1),
-                                      border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                                      '& .MuiChip-icon': {
-                                        color: theme.palette.primary.main,
-                                      },
-                                    }}
-                                  />
-                                )}
-                                <Chip
-                                  icon={<CurrencyRupeeIcon />}
-                                  label={`${currency(job.salaryMin)}${job.salaryMax ? ` – ${currency(job.salaryMax)}` : ''}`}
-                                  size="small"
-                                  sx={{
-                                    borderRadius: 3,
-                                    background: alpha(theme.palette.success.main, 0.1),
-                                    border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
-                                    '& .MuiChip-icon': {
-                                      color: theme.palette.success.main,
-                                    },
-                                  }}
-                                />
-                                <Chip
-                                  icon={<AccessTimeIcon />}
-                                  label={postedDate ? timeAgo(postedDate) : '—'}
-                                  size="small"
-                                  sx={{
-                                    borderRadius: 3,
-                                    background: alpha(theme.palette.info.main, 0.1),
-                                    border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
-                                    '& .MuiChip-icon': {
-                                      color: theme.palette.info.main,
-                                    },
-                                  }}
-                                />
-                                <Chip
-  icon={<CurrencyRupeeIcon />}
-  label="Incentive: ₹2,000 – ₹35,000"
-  size="small"
-  color="secondary"
-  variant="outlined"
-/>
-<Chip
-  icon={<AccessTimeIcon />}
-  label="Work Time: 10 AM – 7 PM"
-  size="small"
-  color="secondary"
-  variant="outlined"
-/>
+                              <Stack
+  direction="row"
+  spacing={1}
+  useFlexGap
+  flexWrap="wrap"
+  sx={{
+    rowGap: 1,
+    columnGap: 1,
+  }}
+>
+  {job.workMode && (
+    <Chip
+      icon={WORK_MODE_ICONS[job.workMode]}
+      label={WORK_MODE_LABEL[job.workMode] || job.workMode}
+      size="small"
+      sx={{
+        borderRadius: 3,
+        background: alpha(theme.palette.primary.main, 0.1),
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+        '& .MuiChip-icon': {
+          color: theme.palette.primary.main,
+        },
+      }}
+    />
+  )}
 
-                              </Stack>
+  <Chip
+    icon={<CurrencyRupeeIcon />}
+    label={`${currency(job.salaryMin)}${job.salaryMax ? ` – ${currency(job.salaryMax)}` : ''}`}
+    size="small"
+    sx={{
+      borderRadius: 3,
+      background: alpha(theme.palette.success.main, 0.1),
+      border: `1px solid ${alpha(theme.palette.success.main, 0.3)}`,
+      '& .MuiChip-icon': {
+        color: theme.palette.success.main,
+      },
+    }}
+  />
+
+  <Chip
+    icon={<AccessTimeIcon />}
+    label={postedDate ? timeAgo(postedDate) : '—'}
+    size="small"
+    sx={{
+      borderRadius: 3,
+      background: alpha(theme.palette.info.main, 0.1),
+      border: `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+      '& .MuiChip-icon': {
+        color: theme.palette.info.main,
+      },
+    }}
+  />
+
+  {/* NEW Extra Chips */}
+  <Chip
+    icon={<CurrencyRupeeIcon />}
+    label="Incentive: ₹2,000 – ₹35,000"
+    size="small"
+    variant="outlined"
+    color="secondary"
+  />
+  <Chip
+    icon={<AccessTimeIcon />}
+    label="Work Time: 10 AM – 7 PM"
+    size="small"
+    variant="outlined"
+    color="secondary"
+  />
+</Stack>
 
                               {/* Description */}
                               <Typography
