@@ -39,7 +39,6 @@ import {
   DialogActions,
   Slide,
   Fab,
-  Collapse,
 } from '@mui/material';
 
 import SearchIcon from '@mui/icons-material/Search';
@@ -62,8 +61,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import TuneIcon from '@mui/icons-material/Tune';
 import CategoryIcon from '@mui/icons-material/Category';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { TransitionProps } from '@mui/material/transitions';
 import { keyframes } from '@mui/system';
 
@@ -218,9 +215,6 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
-
-  // Filter expand state
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   // Saved jobs set (persisted)
   const [savedJobs, setSavedJobs] = useState<number[]>(() => {
@@ -531,18 +525,18 @@ export default function JobsPage() {
     );
   };
 
-  // Horizontal Filters Component
+  // Horizontal Filters Component - UPDATED with salary inputs and reduced height
   const HorizontalFilters = () => (
     <Paper sx={{
-      p: 3,
+      p: 2, // Reduced from 3 to 2
       borderRadius: 4,
       mb: 3,
       background: 'rgba(255,255,255,0.98)',
       backdropFilter: 'blur(20px)',
-      boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.06)', // Reduced shadow
       border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
     }}>
-      <Stack spacing={3}>
+      <Stack spacing={2}> {/* Reduced from 3 to 2 */}
         {/* Filter Header */}
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Stack direction="row" spacing={2} alignItems="center">
@@ -557,42 +551,27 @@ export default function JobsPage() {
             )}
           </Stack>
 
-          <Stack direction="row" spacing={2}>
-            {!isMobile && (
-              <Button
-                variant="outlined"
-                onClick={() => setFiltersExpanded(!filtersExpanded)}
-                startIcon={filtersExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                sx={{
-                  borderRadius: 3,
-                  borderColor: theme.palette.divider,
-                }}
-              >
-                {filtersExpanded ? 'Less Filters' : 'More Filters'}
-              </Button>
-            )}
-            
-            <Button
-              variant="outlined"
-              onClick={clearFilters}
-              startIcon={<ClearIcon />}
-              sx={{
-                borderRadius: 3,
-                borderColor: theme.palette.divider,
-                '&:hover': {
-                  borderColor: theme.palette.primary.main,
-                  background: alpha(theme.palette.primary.main, 0.05),
-                },
-              }}
-            >
-              Clear All
-            </Button>
-          </Stack>
+          <Button
+            variant="outlined"
+            onClick={clearFilters}
+            startIcon={<ClearIcon />}
+            size="small" // Added small size
+            sx={{
+              borderRadius: 3,
+              borderColor: theme.palette.divider,
+              '&:hover': {
+                borderColor: theme.palette.primary.main,
+                background: alpha(theme.palette.primary.main, 0.05),
+              },
+            }}
+          >
+            Clear All
+          </Button>
         </Stack>
 
-        {/* Quick Filters Row - Always Visible */}
+        {/* Main Filters Row - Now includes salary */}
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel>Company</InputLabel>
               <Select
@@ -614,7 +593,7 @@ export default function JobsPage() {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel>Location</InputLabel>
               <Select
@@ -636,7 +615,7 @@ export default function JobsPage() {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel>Role</InputLabel>
               <Select
@@ -658,7 +637,7 @@ export default function JobsPage() {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2}>
             <FormControl fullWidth size="small">
               <InputLabel>Work mode</InputLabel>
               <Select
@@ -679,72 +658,132 @@ export default function JobsPage() {
               </Select>
             </FormControl>
           </Grid>
+
+          {/* Min Salary Filter */}
+          <Grid item xs={12} sm={6} md={2}>
+            <TextField
+              label="Min salary"
+              type="number"
+              value={minSalary}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '' || /^[0-9]*$/.test(value)) {
+                  setMinSalary(value);
+                }
+              }}
+              fullWidth
+              size="small"
+              placeholder="0"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <CurrencyRupeeIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                inputProps: { min: 0, step: 1 },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3,
+                },
+              }}
+            />
+          </Grid>
+
+          {/* Max Salary Filter */}
+          <Grid item xs={12} sm={6} md={2}>
+            <TextField
+              label="Max salary"
+              type="number"
+              value={maxSalary}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === '' || /^[0-9]*$/.test(value)) {
+                  setMaxSalary(value);
+                }
+              }}
+              fullWidth
+              size="small"
+              placeholder="0"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <CurrencyRupeeIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+                inputProps: { min: 0, step: 1 },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3,
+                },
+              }}
+            />
+          </Grid>
         </Grid>
 
-        {/* Expandable Filters - Salary Range */}
-        <Collapse in={filtersExpanded || isMobile}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="subtitle2" color="text.secondary" fontWeight={600} mb={2}>
-                Salary Range
-              </Typography>
-              <Stack direction="row" spacing={2}>
-                <TextField
-                  label="Min salary"
-                  type="number"
-                  value={minSalary}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '' || /^[0-9]*$/.test(value)) {
-                      setMinSalary(value);
-                    }
-                  }}
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <CurrencyRupeeIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                    inputProps: { min: 0, step: 1 },
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                    },
-                  }}
-                />
-                <TextField
-                  label="Max salary"
-                  type="number"
-                  value={maxSalary}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '' || /^[0-9]*$/.test(value)) {
-                      setMaxSalary(value);
-                    }
-                  }}
-                  fullWidth
-                  size="small"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <CurrencyRupeeIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                    inputProps: { min: 0, step: 1 },
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 3,
-                    },
-                  }}
-                />
-              </Stack>
-            </Grid>
-          </Grid>
-        </Collapse>
+        {/* Active Filters Display */}
+        {activeFiltersCount > 0 && (
+          <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center', mr: 1 }}>
+              Active filters:
+            </Typography>
+            
+            {company && (
+              <Chip
+                label={`Company: ${company}`}
+                onDelete={() => setCompany('')}
+                size="small"
+                sx={{ borderRadius: 2 }}
+              />
+            )}
+            
+            {location && (
+              <Chip
+                label={`Location: ${location}`}
+                onDelete={() => setLocation('')}
+                size="small"
+                sx={{ borderRadius: 2 }}
+              />
+            )}
+            
+            {role && (
+              <Chip
+                label={`Role: ${role}`}
+                onDelete={() => setRole('')}
+                size="small"
+                sx={{ borderRadius: 2 }}
+              />
+            )}
+            
+            {workMode && (
+              <Chip
+                label={`Mode: ${WORK_MODE_LABEL[workMode] || workMode}`}
+                onDelete={() => setWorkMode('')}
+                size="small"
+                sx={{ borderRadius: 2 }}
+              />
+            )}
+            
+            {minSalary && (
+              <Chip
+                label={`Min: ₹${Number(minSalary).toLocaleString()}`}
+                onDelete={() => setMinSalary('')}
+                size="small"
+                sx={{ borderRadius: 2 }}
+              />
+            )}
+            
+            {maxSalary && (
+              <Chip
+                label={`Max: ₹${Number(maxSalary).toLocaleString()}`}
+                onDelete={() => setMaxSalary('')}
+                size="small"
+                sx={{ borderRadius: 2 }}
+              />
+            )}
+          </Stack>
+        )}
       </Stack>
     </Paper>
   );
