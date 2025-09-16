@@ -749,7 +749,7 @@ export default function JobsPage() {
   );
 
   return (
-    <Box sx={{
+      <Box sx={{
       minHeight: '100vh',
       width: '100%',
       background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.03)} 0%, ${alpha(theme.palette.secondary.main, 0.03)} 100%)`,
@@ -914,12 +914,12 @@ export default function JobsPage() {
           </Fade>
         </Container>
       </Box>
-
-     <Container maxWidth="xl" sx={{ px: { xs: 2, md: 3 } }}>
+    
+      <Container maxWidth="xl" sx={{ px: { xs: 2, md: 3 } }}>
         <Grid container spacing={3}>
           {/* Desktop Filters - Hidden on Mobile */}
           {!isMobile && (
-            <Grid item xs={12} md={4} lg={3}> {/* Changed from md={3} to md={4} */}
+            <Grid item xs={12} md={4} lg={3}>
               <Zoom in timeout={500}>
                 <Box>
                   <DesktopFilters />
@@ -929,9 +929,9 @@ export default function JobsPage() {
           )}
 
           {/* Job Listings */}
-           <Grid item xs={12} md={isMobile ? 12 : 8} lg={isMobile ? 12 : 9}> {/* Changed from md={9} to md={8} */}
+          <Grid item xs={12} md={isMobile ? 12 : 8} lg={isMobile ? 12 : 9}>
             <Stack spacing={3}>
-              {/* Results Header */}
+              {/* Results Header - Fixed alignment */}
               <Fade in timeout={700}>
                 <Paper sx={{
                   p: { xs: 2, md: 3 },
@@ -940,11 +940,11 @@ export default function JobsPage() {
                   backdropFilter: 'blur(20px)',
                   boxShadow: '0 5px 20px rgba(0,0,0,0.08)',
                 }}>
-                  <Stack direction="row" justifyContent="flex-end" alignItems="center" sx={{ width: '100%' }}>
-  <Stack direction="row" spacing={2} alignItems="center">
-    <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
-      {total} Jobs Found
-    </Typography>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Typography variant={isMobile ? "h6" : "h5"} fontWeight={700}>
+                        {total} Jobs Found
+                      </Typography>
                       {loading && (
                         <Box sx={{
                           width: 30,
@@ -963,7 +963,7 @@ export default function JobsPage() {
                     </Stack>
 
                     {/* RIGHT SIDE: Saved button with badge */}
-                   <Stack direction="row" spacing={2} alignItems="center" sx={{ ml: 3 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
                       <Button
                         component={Link}
                         to="/saved-jobs"
@@ -984,8 +984,8 @@ export default function JobsPage() {
                       >
                         Saved
                       </Button>
-                       <Typography variant="body2" color="text.secondary">
-      Page {page} of {totalPages}
+                      <Typography variant="body2" color="text.secondary">
+                        Page {page} of {totalPages}
                       </Typography>
                     </Stack>
                   </Stack>
