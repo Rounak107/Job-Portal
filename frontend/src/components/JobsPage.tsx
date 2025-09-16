@@ -915,11 +915,11 @@ export default function JobsPage() {
         </Container>
       </Box>
 
-      <Container maxWidth="xl" sx={{ px: { xs: 2, md: 3 } }}>
+     <Container maxWidth="xl" sx={{ px: { xs: 2, md: 3 } }}>
         <Grid container spacing={3}>
           {/* Desktop Filters - Hidden on Mobile */}
           {!isMobile && (
-            <Grid item xs={12} md={3} lg={3}>
+            <Grid item xs={12} md={4} lg={3}> {/* Changed from md={3} to md={4} */}
               <Zoom in timeout={500}>
                 <Box>
                   <DesktopFilters />
@@ -929,7 +929,7 @@ export default function JobsPage() {
           )}
 
           {/* Job Listings */}
-          <Grid item xs={12} md={isMobile ? 12 : 9} lg={isMobile ? 12 : 9}>
+           <Grid item xs={12} md={isMobile ? 12 : 8} lg={isMobile ? 12 : 9}> {/* Changed from md={9} to md={8} */}
             <Stack spacing={3}>
               {/* Results Header */}
               <Fade in timeout={700}>
