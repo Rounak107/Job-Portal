@@ -453,13 +453,13 @@ export default function JobsPage() {
                     onClose();
                   }}
                   sx={{
-                    py: 3,
-                    justifyContent: 'flex-start',
-                    background: workMode === wm ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
-                    color: workMode === wm ? '#fff' : 'inheritros',
-                    border: '1px solid',
-                    borderColor: workMode === wm ? 'transparent' : theme.palette.divider,
-                  }}
+  py: 3,
+  justifyContent: 'flex-start',
+  background: workMode === wm ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 'transparent',
+  color: workMode === wm ? '#fff' : 'inherit', // ← Fixed this line
+  border: '1px solid',
+  borderColor: workMode === wm ? 'transparent' : theme.palette.divider,
+}}
                 />
               ))}
             </Stack>
