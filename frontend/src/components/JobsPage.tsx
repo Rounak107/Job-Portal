@@ -1211,7 +1211,7 @@ export default function JobsPage() {
                                 />
                                 <Chip
   icon={<CurrencyRupeeIcon />}
-  label="Incentive: ₹2,000 – ₹25,000"
+  label="Incentive: ₹2,000 – ₹35,000"
   size="small"
   color="secondary"
   variant="outlined"
