@@ -1209,6 +1209,21 @@ export default function JobsPage() {
                                     },
                                   }}
                                 />
+                                <Chip
+  icon={<CurrencyRupeeIcon />}
+  label="Incentive: ₹2,000 – ₹25,000"
+  size="small"
+  color="secondary"
+  variant="outlined"
+/>
+<Chip
+  icon={<AccessTimeIcon />}
+  label="Work Time: 10 AM – 7 PM"
+  size="small"
+  color="secondary"
+  variant="outlined"
+/>
+
                               </Stack>
 
                               {/* Description */}

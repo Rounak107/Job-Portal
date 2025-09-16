@@ -1,0 +1,206 @@
+Your app password for your device
+kfcl kluq byzj pmhj
+
+Register user (applicant)
+{
+    "message": "Login successful",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiZW1haWwiOiJhcHBsaWNhbnRAZXhhbXBsZS5jb20iLCJyb2xlIjoiVVNFUiIsImlhdCI6MTc1NDY1MTI2MiwiZXhwIjoxNzU0NzM3NjYyfQ.aubwhc-54Rnsk9tOAFcWdqD5dDPKYbgGsT5LCZ8KNSg",
+    "user": {
+        "id": 4,
+        "email": "applicant@example.com",
+        "name": "App User",
+        "role": "USER"
+    }
+}
+
+recruiter token :
+{
+    "message": "Login successful",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwiZW1haWwiOiJyZWNAZXhhbXBsZS5jb20iLCJyb2xlIjoiUkVDUlVJVEVSIiwiaWF0IjoxNzU0NjUxNTg3LCJleHAiOjE3NTQ3Mzc5ODd9.qI0fvcGtJJPi8moM6Mchxx5DbBsI09LuTFh2mXRUp10",
+    "user": {
+        "id": 5,
+        "email": "rec@example.com",
+        "name": "Rec User",
+        "role": "RECRUITER"
+    }
+}
+
+Recruiter posts a job (api/jobs)
+{
+    "id": 5,
+    "title": "Backend Dev",
+    "description": "...",
+    "company": "Acme",
+    "location": "Remote",
+    "postedById": 5,
+    "createdAt": "2025-08-08T11:15:47.751Z"
+}
+
+Applicant applies (file or resumeUrl)
+With applicant token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiZW1haWwiOiJ0ZXN0MUBleGFtcGxlLmNvbSIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzU0NTY3NjIyLCJleHAiOjE3NTQ2NTQwMjJ9.H954Gzn-QypL3S_mMXAUL6SVq3cqPhc1r8z5NzU9jI0
+Option 1 (file) — form-data: http://localhost:5000/api/applications/jobs/5/apply-file
+{
+    "id": 10,
+    "userId": 3,                                                            ////Body: form-data key resume (File) — choose PDF
+    "jobId": 5,
+    "resumeUrl": "/uploads/3-1754652044037.pdf",
+    "status": "PENDING",
+    "createdAt": "2025-08-08T11:20:44.057Z"
+}
+
+Option 2 (resumeUrl) — JSON:
+POST /api/applications/jobs/:jobId/apply
+Body JSON: { "resumeUrl": "https://example.com/resume.pdf" }
+token- USER register user token used
+{
+    "id": 12,
+    "userId": 4,
+    "jobId": 5,
+    "resumeUrl": "https://example.com/resume.pdf",
+    "status": "PENDING",
+    "createdAt": "2025-08-08T11:24:01.665Z"
+}
+
+Login as Recruiter :
+{
+    "message": "Login successful",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiZW1haWwiOiJuZXdyZWNAZXhhbXBsZS5jb20iLCJyb2xlIjoiUkVDUlVJVEVSIiwiaWF0IjoxNzU0ODkzNTI4LCJleHAiOjE3NTQ5Nzk5Mjh9.kNlmBVPQUi49AMQmNI-wJD59ns7AduwZOnYRnuUWtOw",
+    "user": {
+        "id": 6,
+        "email": "newrec@example.com",
+        "name": "Recruiter",
+        "role": "RECRUITER"
+    }
+}
+     ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Recruiter LOGIN - 3.0
+{
+    "message": "Login successful",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NywiZW1haWwiOiJteXJlY0BleGFtcGxlLmNvbSIsInJvbGUiOiJSRUNSVUlURVIiLCJpYXQiOjE3NTQ4OTU2MDIsImV4cCI6MTc1NDk4MjAwMn0.33ibbS9fdsPhRYPalVTOUF7w6p5Ckh4X91YjkiSU5Zo",
+    "user": {
+        "id": 7,
+        "email": "myrec@example.com",
+        "name": "My Recruiter",
+        "role": "RECRUITER"
+    }
+}
+
+api/jobs Posted :
+{
+    "id": 6,
+    "title": "Fullstack Developer",
+    "description": "Work on exciting projects.",
+    "company": "Acme Corp",
+    "location": "Remote",
+    "postedById": 7,
+    "createdAt": "2025-08-11T07:02:42.356Z"
+}
+
+applicant login :
+{
+    "message": "Login successful",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwiZW1haWwiOiJhcHBsaWNhbnQyQGV4YW1wbGUuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTQ4OTU4OTIsImV4cCI6MTc1NDk4MjI5Mn0.m05SigRBw1TzhxSCaVTtkHU381egvbWHb7k20ar9aaA",
+    "user": {
+        "id": 8,
+        "email": "applicant2@example.com",
+        "name": "Applicant Two",
+        "role": "USER"
+    }
+}
+
+Apply to the Job as the Applicant
+POST http://localhost:5000/api/applications/jobs/7/apply
+(Replace 6 with the job id from Step 3.)
+Headers: Authorization: Bearer <applicant_token>
+Content-Type: application/json
+{
+    "id": 14,
+    "userId": 8,
+    "jobId": 6,
+    "resumeUrl": "https://example.com/myresume.pdf",
+    "status": "PENDING",
+    "createdAt": "2025-08-11T07:11:57.721Z"
+}
+
+ STATUS UPDATE - http://localhost:5000/api/applications/14/status 
+{
+    "id": 14,
+    "userId": 8,
+    "jobId": 6,
+    "resumeUrl": "https://example.com/myresume.pdf",
+    "status": "SHORTLISTED",
+    "createdAt": "2025-08-11T07:11:57.721Z"
+}
+
+Single Status Update + Audit - http://localhost:5000/api/applications/14/status ----> application and audit.
+{
+    "message": "Status unchanged",
+    "application": {
+        "id": 14,
+        "userId": 8,
+        "jobId": 6,
+        "resumeUrl": "https://example.com/myresume.pdf",
+        "status": "SHORTLISTED",
+        "createdAt": "2025-08-11T07:11:57.721Z",
+        "job": {
+            "id": 6,
+            "title": "Fullstack Developer",
+            "description": "Work on exciting projects.",
+            "company": "Acme Corp",
+            "location": "Remote",
+            "postedById": 7,
+            "createdAt": "2025-08-11T07:02:42.356Z"
+        },
+        "user": {
+            "id": 8,
+            "name": "Applicant Two",
+            "email": "applicant2@example.com",
+            "password": "$2b$10$ddyJp3vpVG1ScZJnvVs3hubIc8s1Z7I8L6Gvslj49BnJsWvUtD4eG",
+            "role": "USER",
+            "createdAt": "2025-08-11T07:04:25.299Z",
+            "updatedAt": "2025-08-11T07:04:25.299Z"
+        }
+    }
+}
+
+BATCH UPDATE http://localhost:5000/api/applications/batch-status  (JSON with updated count and email results.)
+{
+    "message": "Batch update completed",
+    "updated": 1,
+    "emailResults": [
+        {
+            "id": 14,
+            "email": "applicant2@example.com",
+            "ok": true
+        }
+    ]
+}
+
+Fetch Audits
+Request:
+GET /api/applications/15/audits
+(with any authorized token)
+Response:
+JSON
+
+[
+    {
+        "id": 1,
+        "applicationId": 14,
+        "previousStatus": "SHORTLISTED",
+        "newStatus": "SHORTLISTED",
+        "changedById": 7,
+        "note": "Bulk shortlist",
+        "createdAt": "...",
+        "changedBy": {
+            "id": 7,
+            "email": "myrec@example.com",
+            "name": "My Recruiter"
+        }
+    }
+]
+Result:
+You see the audit log for the application, including who changed it and the note.
+
+

@@ -52,7 +52,7 @@ export default function Header() {
                       isScrolled ? "text-gray-800" : "text-white"
                     }`}
                   >
-                  Job<span className={isScrolled ? 'text-indigo-600' : 'text-yellow-300'}>Portal</span>
+                  Job<span className={isScrolled ? 'text-indigo-600' : 'text-yellow-300'}>Run</span>
                 </span>
               </Link>
             </motion.div>
