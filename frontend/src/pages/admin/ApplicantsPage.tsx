@@ -1,11 +1,22 @@
+// frontend/src/pages/admin/ApplicantsPage.tsx
 import { useEffect, useState } from "react";
 import { api } from "../../api";
+
+type LatestApplication = {
+  jobId?: number | null;
+  jobTitle?: string | null;
+  company?: string | null;
+  status?: string | null;
+  appliedAt?: string | null;
+};
 
 type Applicant = {
   id: number;
   name: string;
   email: string;
   createdAt: string;
+  applicationCount: number;
+  latestApplication?: LatestApplication | null;
 };
 
 export default function ApplicantsPage() {
@@ -31,7 +42,9 @@ export default function ApplicantsPage() {
             <th className="p-2 border">ID</th>
             <th className="p-2 border">Name</th>
             <th className="p-2 border">Email</th>
-            <th className="p-2 border">Created</th>
+            <th className="p-2 border">Applications</th>
+            <th className="p-2 border">Latest Applied (Role - Company)</th>
+            <th className="p-2 border">Joined</th>
           </tr>
         </thead>
         <tbody>
@@ -40,9 +53,13 @@ export default function ApplicantsPage() {
               <td className="p-2 border">{a.id}</td>
               <td className="p-2 border">{a.name}</td>
               <td className="p-2 border">{a.email}</td>
+              <td className="p-2 border">{a.applicationCount}</td>
               <td className="p-2 border">
-                {new Date(a.createdAt).toLocaleDateString()}
+                {a.latestApplication?.jobTitle
+                  ? `${a.latestApplication.jobTitle} - ${a.latestApplication.company ?? "-"}` 
+                  : "-"}
               </td>
+              <td className="p-2 border">{new Date(a.createdAt).toLocaleDateString()}</td>
             </tr>
           ))}
         </tbody>

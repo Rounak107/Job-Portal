@@ -1,3 +1,4 @@
+// frontend/src/pages/admin/RecruitersPage.tsx
 import { useEffect, useState } from "react";
 import { api } from "../../api";
 
@@ -6,6 +7,9 @@ type Recruiter = {
   name: string;
   email: string;
   createdAt: string;
+  jobCount: number;
+  applicationsCount: number;
+  applicationsByStatus: Record<string, number>;
 };
 
 export default function RecruitersPage() {
@@ -31,20 +35,33 @@ export default function RecruitersPage() {
             <th className="p-2 border">ID</th>
             <th className="p-2 border">Name</th>
             <th className="p-2 border">Email</th>
+            <th className="p-2 border">Jobs</th>
+            <th className="p-2 border">Applications</th>
+            <th className="p-2 border">Accepted</th>
+            <th className="p-2 border">Pending</th>
+            <th className="p-2 border">Rejected</th>
             <th className="p-2 border">Created</th>
           </tr>
         </thead>
         <tbody>
-          {recruiters.map((r) => (
-            <tr key={r.id}>
-              <td className="p-2 border">{r.id}</td>
-              <td className="p-2 border">{r.name}</td>
-              <td className="p-2 border">{r.email}</td>
-              <td className="p-2 border">
-                {new Date(r.createdAt).toLocaleDateString()}
-              </td>
-            </tr>
-          ))}
+          {recruiters.map((r) => {
+            const accepted = r.applicationsByStatus?.ACCEPTED ?? 0;
+            const pending = r.applicationsByStatus?.PENDING ?? 0;
+            const rejected = r.applicationsByStatus?.REJECTED ?? 0;
+            return (
+              <tr key={r.id}>
+                <td className="p-2 border">{r.id}</td>
+                <td className="p-2 border">{r.name}</td>
+                <td className="p-2 border">{r.email}</td>
+                <td className="p-2 border">{r.jobCount}</td>
+                <td className="p-2 border">{r.applicationsCount}</td>
+                <td className="p-2 border">{accepted}</td>
+                <td className="p-2 border">{pending}</td>
+                <td className="p-2 border">{rejected}</td>
+                <td className="p-2 border">{new Date(r.createdAt).toLocaleDateString()}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
