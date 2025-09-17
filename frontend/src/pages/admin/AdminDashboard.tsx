@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { api } from "../../api";  
 
 type Stats = {
   totalRecruiters: number;
@@ -13,12 +14,21 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE}/admin/stats`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then(setStats)
-      .catch(console.error);
+    let mounted = true;
+    async function load() {
+      try {
+        const res = await api.get('/admin/stats');
+        if (mounted) setStats(res.data);
+      } catch (err: any) {
+        console.error('failed admin stats', err);
+        // optional: redirect to admin-login if 401
+        if (err?.response?.status === 401) {
+          // e.g. window.location.href = '/admin/login'
+        }
+      }
+    }
+    load();
+    return () => { mounted = false; };
   }, []);
 
   if (!stats) return <p className="p-6">Loading admin stats...</p>;
