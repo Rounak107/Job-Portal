@@ -83,6 +83,23 @@ export async function getAllRecruiters(req: Request, res: Response) {
   }
 }
 
+export async function getAllJobs(req: Request, res: Response) {
+  try {
+    const jobs = await prisma.job.findMany({
+      include: {
+        postedBy: { select: { id: true, name: true, email: true } },
+        applications: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(jobs);
+  } catch (err) {
+    console.error("getAllJobs error", err);
+    res.status(500).json({ error: "Failed to fetch jobs" });
+  }
+}
+
 /**
  * Return list of applicants including their applications (job title/company),
  * and a quick applicationCount + latestApplication summary.
