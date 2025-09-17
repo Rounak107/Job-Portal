@@ -8,17 +8,22 @@ export async function getAdminStats(req: Request, res: Response) {
     const totalJobs = await prisma.job.count();
     const totalApplications = await prisma.application.count();
 
-    const applicationsByStatus = await prisma.application.groupBy({
+    const applicationsByStatusRaw = await prisma.application.groupBy({
       by: ["status"],
-      _count: { status: true }
+      _count: { status: true },
     });
+
+    const applicationsByStatus = applicationsByStatusRaw.reduce((acc, curr) => {
+      acc[curr.status] = curr._count.status;
+      return acc;
+    }, {} as Record<string, number>);
 
     res.json({
       totalRecruiters,
       totalApplicants,
       totalJobs,
       totalApplications,
-      applicationsByStatus
+      applicationsByStatus,
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch stats" });

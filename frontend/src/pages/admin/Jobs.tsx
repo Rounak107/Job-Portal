@@ -1,41 +1,37 @@
 import { useEffect, useState } from "react";
+import { api } from "../../api";
 
 type Job = {
   id: number;
   title: string;
   company: string;
-  location: string;
-  workMode: string;
-  salaryMin?: number;
-  salaryMax?: number;
   createdAt: string;
 };
 
-export default function JobsPage() {
+export default function Jobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_BASE}/admin/jobs`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then(setJobs)
-      .catch(console.error);
+    api
+      .get<Job[]>("/admin/jobs")
+      .then((res) => setJobs(res.data))
+      .catch((err) => console.error("Failed to fetch jobs", err))
+      .finally(() => setLoading(false));
   }, []);
+
+  if (loading) return <p className="p-6">Loading jobs...</p>;
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">Jobs</h1>
-      <table className="w-full border">
+      <h1 className="text-2xl font-bold mb-4">Jobs</h1>
+      <table className="min-w-full border">
         <thead>
           <tr className="bg-gray-100">
             <th className="p-2 border">ID</th>
             <th className="p-2 border">Title</th>
             <th className="p-2 border">Company</th>
-            <th className="p-2 border">Location</th>
-            <th className="p-2 border">Work Mode</th>
-            <th className="p-2 border">Salary</th>
-            <th className="p-2 border">Posted</th>
+            <th className="p-2 border">Created</th>
           </tr>
         </thead>
         <tbody>
@@ -44,13 +40,6 @@ export default function JobsPage() {
               <td className="p-2 border">{j.id}</td>
               <td className="p-2 border">{j.title}</td>
               <td className="p-2 border">{j.company}</td>
-              <td className="p-2 border">{j.location}</td>
-              <td className="p-2 border">{j.workMode}</td>
-              <td className="p-2 border">
-                {j.salaryMin
-                  ? `₹${j.salaryMin} - ₹${j.salaryMax || "?"}`
-                  : "Not specified"}
-              </td>
               <td className="p-2 border">
                 {new Date(j.createdAt).toLocaleDateString()}
               </td>
