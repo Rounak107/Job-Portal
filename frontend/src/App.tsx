@@ -20,6 +20,7 @@ import RecruitersPage from "./pages/admin/RecruitersPage";
 import ApplicantsPage from "./pages/admin/ApplicantsPage";
 import Jobs from "./pages/admin/Jobs";
 import ApplicationsPage from "./pages/admin/ApplicationsPage";
+import AdminLogin from "./pages/admin/AdminLogin";
 
 const theme = createTheme({
   typography: { fontFamily: `"Inter", "Roboto", "Helvetica", "Arial", sans-serif` },
@@ -46,6 +47,7 @@ export default function App() {
 <Route path="/admin/applications" element={<ApplicationsPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/jobs/:idSlug" element={<JobDetails/>} />
+              <Route path="/bjrTd5q89FP0q1/admin/login" element={<AdminLogin />} />
               <Route
                 path="/recruiter"
                 element={

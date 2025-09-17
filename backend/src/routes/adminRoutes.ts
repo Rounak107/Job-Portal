@@ -15,18 +15,19 @@ const router = express.Router();
 router.use(authMiddleware, requireAdmin);
 
 // Stats overview
-router.get("/stats", getAdminStats);
+//router.get("/stats", getAdminStats);
 
 // Recruiters list
-router.get("/recruiters", getAllRecruiters);
+//router.get("/recruiters", getAllRecruiters);
 
 // Applicants list
-router.get("/applicants", getAllApplicants);
+//router.get("/applicants", getAllApplicants);
 
 // Applications list
-router.get("/applications", getAllApplications);
+//router.get("/applications", getAllApplications);
 
 // Jobs list
-router.get("/jobs", getAllJobs);
+//router.get("/jobs", getAllJobs);
+
 
 export default router;
