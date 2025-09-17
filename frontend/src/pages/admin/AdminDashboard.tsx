@@ -7,7 +7,7 @@ type Stats = {
   totalApplicants: number;
   totalJobs: number;
   totalApplications: number;
-  applicationsByStatus: { status: string; _count: { status: number } }[];
+  applicationsByStatus: Record<string, number>;  // object not array
 };
 
 export default function AdminDashboard() {
@@ -54,14 +54,14 @@ export default function AdminDashboard() {
       </div>
 
       {/* Applications by Status */}
-      <h2 className="text-xl font-semibold mb-2">Applications by Status</h2>
-      <ul className="list-disc ml-6">
-        {stats.applicationsByStatus.map((row) => (
-          <li key={row.status}>
-            {row.status}: {row._count.status}
-          </li>
-        ))}
-      </ul>
+<h2 className="text-xl font-semibold mb-2">Applications by Status</h2>
+<ul className="list-disc ml-6">
+  {Object.entries(stats.applicationsByStatus).map(([status, count]) => (
+    <li key={status}>
+      {status}: {count}
+    </li>
+  ))}
+</ul>
     </div>
   );
 }
