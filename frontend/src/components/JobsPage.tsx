@@ -77,6 +77,8 @@ type Job = {
   postedBy?: { id: number; name: string; email: string };
   createdAt?: string | null;
   postedAt?: string | null;
+    incentive?: string | null;   // 👈 add
+  workTime?: string | null;    // 👈 add
 };
 
 const WORK_MODE_LABEL: Record<string, string> = {
@@ -1231,6 +1233,37 @@ export default function JobsPage() {
                                 },
                               }}
                             />
+                             {job.incentive && (
+    <Chip
+      icon={<TrendingUpIcon />}
+      label={`Incentive: ${job.incentive}`}
+      size="small"
+      sx={{
+        borderRadius: 3,
+        background: (theme) => alpha(theme.palette.warning.main, 0.1),
+        border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
+        '& .MuiChip-icon': {
+          color: (theme) => theme.palette.warning.main,
+        },
+      }}
+    />
+  )}
+
+  {job.workTime && (
+    <Chip
+      icon={<AccessTimeIcon />}
+      label={`Work Time: ${job.workTime}`}
+      size="small"
+      sx={{
+        borderRadius: 3,
+        background: (theme) => alpha(theme.palette.info.main, 0.1),
+        border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+        '& .MuiChip-icon': {
+          color: (theme) => theme.palette.info.main,
+        },
+      }}
+    />
+  )}
                             <Chip
                               icon={<AccessTimeIcon />}
                               label={postedDate ? timeAgo(postedDate) : '—'}

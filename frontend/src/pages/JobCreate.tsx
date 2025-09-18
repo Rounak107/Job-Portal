@@ -140,6 +140,8 @@ export default function JobCreate() {
     salaryMax: '',
     workMode: '',
     role: '',
+     incentive: '',   // ✅ new
+  workTime: '',    // ✅ new
   });
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ 
@@ -164,6 +166,8 @@ export default function JobCreate() {
         ...form,
         salaryMin: form.salaryMin ? Number(form.salaryMin) : undefined,
         salaryMax: form.salaryMax ? Number(form.salaryMax) : undefined,
+          incentive: form.incentive || undefined,
+  workTime: form.workTime || undefined,
       };
       const res = await api.post('/jobs', payload);
       setSnackbar({ open: true, message: 'Job posted successfully!', severity: 'success' });
@@ -372,6 +376,44 @@ export default function JobCreate() {
                     />
                   </Stack>
                 </motion.div>
+
+                {/* Incentive & Work Time Row */}
+<motion.div variants={formSectionVariants}>
+  <Typography variant="h6" fontWeight={600} mb={2} color="primary">
+    🎁 Incentive & ⏰ Working Time
+  </Typography>
+  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3}>
+    <StyledTextField
+      label="Incentive (e.g. Performance Bonus, Allowances)"
+      name="incentive"
+      value={form.incentive}
+      onChange={handleChange}
+      fullWidth
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <CurrencyRupeeIcon color="secondary" />
+          </InputAdornment>
+        ),
+      }}
+    />
+    <StyledTextField
+      label="Working Time (e.g. 9 AM – 6 PM)"
+      name="workTime"
+      value={form.workTime}
+      onChange={handleChange}
+      fullWidth
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <WorkIcon color="primary" />
+          </InputAdornment>
+        ),
+      }}
+    />
+  </Stack>
+</motion.div>
+
 
                 {/* Work Mode */}
                 <motion.div variants={formSectionVariants}>

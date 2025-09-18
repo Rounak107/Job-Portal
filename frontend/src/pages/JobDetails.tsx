@@ -103,6 +103,8 @@ type Job = {
   salaryMax?: number | null;
   workMode?: string | null;
   role?: string | null;
+  incentive?: string | null;   // <-- add this
+  workTime?: string | null;    // <-- add this
   postedBy?: { id: number; name: string; email: string };
   applications?: Application[];
 };
@@ -355,6 +357,18 @@ export default function JobDetail() {
                     />
                   )}
                 </Stack>
+                {job.incentive && (
+  <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+    🎁 Incentive: {job.incentive}
+  </Typography>
+)}
+
+{job.workTime && (
+  <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+    ⏰ Working Time: {job.workTime}
+  </Typography>
+)}
+
               </motion.div>
 
               <motion.div

@@ -19,22 +19,39 @@ function parseOptionalNumber(value: any): number | null {
 export const createJob = async (req: Request, res: Response) => {
   try {
     const currentUser = (req as any).user;
-    if (!currentUser) return res.status(401).json({ message: 'Unauthorized' });
+    if (!currentUser) return res.status(401).json({ message: "Unauthorized" });
     if (![Role.RECRUITER, Role.ADMIN].includes(currentUser.role)) {
-      return res.status(403).json({ message: 'Only recruiters/admin can create jobs' });
+      return res
+        .status(403)
+        .json({ message: "Only recruiters/admin can create jobs" });
     }
 
-    const { title, company, location, description, salaryMin, salaryMax, workMode, role } = req.body;
+    const {
+      title,
+      company,
+      location,
+      description,
+      salaryMin,
+      salaryMax,
+      workMode,
+      role,
+      incentive, // ✅ new
+      workTime,  // ✅ new
+    } = req.body;
 
     if (!title || !company || !location || !description) {
-      return res.status(400).json({ message: 'title, company, location and description are required' });
+      return res
+        .status(400)
+        .json({ message: "title, company, location and description are required" });
     }
 
     const min = parseOptionalNumber(salaryMin);
     const max = parseOptionalNumber(salaryMax);
 
     if (min !== null && max !== null && min > max) {
-      return res.status(400).json({ message: 'salaryMin cannot be greater than salaryMax' });
+      return res
+        .status(400)
+        .json({ message: "salaryMin cannot be greater than salaryMax" });
     }
 
     const job = await prisma.job.create({
@@ -48,15 +65,18 @@ export const createJob = async (req: Request, res: Response) => {
         salaryMax: max,
         workMode: workMode ?? undefined,
         role: role ?? null,
+        incentive: incentive ? String(incentive).trim() : null, // ✅
+        workTime: workTime ? String(workTime).trim() : null,   // ✅
       },
     });
 
-    return res.status(201).json({ message: 'Job created successfully', job });
+    return res.status(201).json({ message: "Job created successfully", job });
   } catch (err: any) {
-    console.error('createJob error:', err);
-    return res.status(500).json({ message: 'Error creating job', error: err.message });
+    console.error("createJob error:", err);
+    return res.status(500).json({ message: "Error creating job", error: err.message });
   }
 };
+
 
 /**
  * Get all jobs with multi-field case-insensitive search + filters + salary-range overlap logic
