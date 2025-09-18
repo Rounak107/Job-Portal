@@ -5,6 +5,7 @@
 
 */
 -- AlterTable
-ALTER TABLE "public"."Job" ADD COLUMN     "incentive" TEXT,
-ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL,
-ADD COLUMN     "workTime" TEXT;
+ALTER TABLE "public"."Job" 
+ADD COLUMN "incentive" TEXT,
+ADD COLUMN "workTime" TEXT,
+ADD COLUMN "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT NOW();
