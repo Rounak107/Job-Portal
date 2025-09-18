@@ -101,35 +101,59 @@ export async function getRecruiterById(req: Request, res: Response) {
       return res.status(404).json({ error: "Recruiter not found" });
     }
 
+    // Reformat to match /recruiter/me structure
     const jobCount = recruiter.jobs.length;
-    const applications = recruiter.jobs.flatMap(j => j.applications || []);
-    const applicationsCount = applications.length;
-    const applicationsByStatus = applications.reduce<Record<string, number>>((acc, a) => {
-      acc[a.status] = (acc[a.status] || 0) + 1;
-      return acc;
-    }, {});
+    const totalViews = recruiter.jobs.reduce((sum, job) => sum + (job.views || 0), 0);
+    const totalApplications = recruiter.jobs.reduce(
+      (sum, job) => sum + (job.applications?.length || 0),
+      0
+    );
+
+    // Build jobs array in the expected format
+    const jobs = recruiter.jobs.map(job => ({
+      id: job.id,
+      title: job.title,
+      company: job.company,
+      location: job.location,
+      createdAt: job.createdAt,
+      applicationsCount: job.applications?.length || 0,
+      views: job.views || 0,
+    }));
+
+    // Build analytics data (simplified version)
+    const now = new Date();
+    const months = 6;
+    const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+
+    // You'll need to fetch proper analytics data here
+    // For now, returning empty arrays as placeholders
+    const viewsByMonth: { month: string; count: number }[] = [];
+    const appsByMonth: { month: string; count: number }[] = [];
 
     res.json({
-      id: recruiter.id,
-      name: recruiter.name,
-      email: recruiter.email,
-      createdAt: recruiter.createdAt,
-      jobCount,
-      applicationsCount,
-      applicationsByStatus,
-      jobs: recruiter.jobs.map(j => ({
-        id: j.id,
-        title: j.title,
-        company: j.company,
-        applications: j.applications,
-      })),
+      profile: {
+        id: recruiter.id,
+        name: recruiter.name,
+        email: recruiter.email,
+        loginCount: recruiter.loginCount || 0,
+      },
+      stats: {
+        jobCount,
+        totalViews,
+        totalApplications,
+        loginCount: recruiter.loginCount || 0,
+      },
+      jobs,
+      analytics: {
+        viewsByMonth,
+        appsByMonth,
+      },
     });
   } catch (err) {
     console.error("getRecruiterById error", err);
     res.status(500).json({ error: "Failed to fetch recruiter" });
   }
 }
-
 export async function getAllJobs(req: Request, res: Response) {
   try {
     const jobs = await prisma.job.findMany({

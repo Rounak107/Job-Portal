@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
+import { Link } from 'react-router-dom';
 
 type Recruiter = {
   id: number;
@@ -191,12 +192,12 @@ export default function RecruitersPage() {
                       </td>
 
                       <td className="px-6 py-4">
-  <a
-    href={`/admin/recruiters/${r.id}`} // or use React Router <Link> if inside a Router
+  <Link 
+    to={`/admin/recruiters/${r.id}`}
     className="text-blue-600 font-medium hover:underline"
   >
     View Details
-  </a>
+  </Link>
 </td>
                     </tr>
                   );

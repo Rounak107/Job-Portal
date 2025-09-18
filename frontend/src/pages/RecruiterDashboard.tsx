@@ -26,6 +26,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import { useParams } from 'react-router-dom';
 
 // Styled components with animations
 const pulse = keyframes`
@@ -209,7 +210,37 @@ export default function RecruiterDashboard() {
   const [data, setData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useMediaQuery((theme: Theme) => theme.breakpoints.down('lg'));
+  const { id } = useParams<{ id: string }>();
 
+useEffect(() => {
+    let cancelled = false;
+    async function fetchData() {
+      try {
+        setLoading(true);
+        let res;
+        
+        // If an ID is provided in params, fetch that specific recruiter's data
+        if (id) {
+          res = await api.get(`/admin/recruiters/${id}`);
+        } else {
+          // Otherwise fetch the current user's data
+          res = await api.get('/recruiter/me');
+        }
+        
+        if (cancelled) return;
+        setData(res.data);
+        setError(null);
+      } catch (err: any) {
+        console.error(err);
+        setError(err?.response?.data?.message || 'Failed to load dashboard');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    fetchData();
+    return () => { cancelled = true; };
+  }, [id]);
+  
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
