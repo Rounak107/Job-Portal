@@ -57,6 +57,15 @@ export default function App() {
                 }
               />
               <Route
+  path="/admin/recruiters/:id"
+  element={
+    <PrivateRoute roles={['ADMIN']}>
+      <RecruiterDashboard />
+    </PrivateRoute>
+  }
+/>
+
+              <Route
                 path="/recruiter/applicants"
                 element={
                   <PrivateRoute roles={['RECRUITER','ADMIN']}>
