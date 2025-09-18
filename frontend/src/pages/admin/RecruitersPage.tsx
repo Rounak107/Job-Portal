@@ -80,6 +80,9 @@ export default function RecruitersPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Joined
                   </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    View Details
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
@@ -186,6 +189,15 @@ export default function RecruitersPage() {
                           {Math.floor((Date.now() - new Date(r.createdAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
                         </div>
                       </td>
+
+                      <td className="px-6 py-4">
+  <a
+    href={`/admin/recruiters/${r.id}`} // or use React Router <Link> if inside a Router
+    className="text-blue-600 font-medium hover:underline"
+  >
+    View Details
+  </a>
+</td>
                     </tr>
                   );
                 })}

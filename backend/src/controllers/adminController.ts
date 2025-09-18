@@ -83,6 +83,53 @@ export async function getAllRecruiters(req: Request, res: Response) {
   }
 }
 
+export async function getRecruiterById(req: Request, res: Response) {
+  const recruiterId = Number(req.params.id);
+  try {
+    const recruiter = await prisma.user.findUnique({
+      where: { id: recruiterId },
+      include: {
+        jobs: {
+          include: {
+            applications: true,
+          },
+        },
+      },
+    });
+
+    if (!recruiter || recruiter.role !== "RECRUITER") {
+      return res.status(404).json({ error: "Recruiter not found" });
+    }
+
+    const jobCount = recruiter.jobs.length;
+    const applications = recruiter.jobs.flatMap(j => j.applications || []);
+    const applicationsCount = applications.length;
+    const applicationsByStatus = applications.reduce<Record<string, number>>((acc, a) => {
+      acc[a.status] = (acc[a.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    res.json({
+      id: recruiter.id,
+      name: recruiter.name,
+      email: recruiter.email,
+      createdAt: recruiter.createdAt,
+      jobCount,
+      applicationsCount,
+      applicationsByStatus,
+      jobs: recruiter.jobs.map(j => ({
+        id: j.id,
+        title: j.title,
+        company: j.company,
+        applications: j.applications,
+      })),
+    });
+  } catch (err) {
+    console.error("getRecruiterById error", err);
+    res.status(500).json({ error: "Failed to fetch recruiter" });
+  }
+}
+
 export async function getAllJobs(req: Request, res: Response) {
   try {
     const jobs = await prisma.job.findMany({

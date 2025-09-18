@@ -7,6 +7,7 @@ import {
   getAllRecruiters,
   getAllApplicants,
   getAllApplications,
+   getRecruiterById,
   getAllJobs,
 } from "../controllers/adminController";
 
@@ -20,6 +21,7 @@ router.get("/stats", getAdminStats);
 
 // Recruiters list
 router.get("/recruiters", getAllRecruiters);
+router.get("/recruiters/:id", getRecruiterById);
 
 // Applicants list
 router.get("/applicants", getAllApplicants);
