@@ -241,25 +241,25 @@ useEffect(() => {
     return () => { cancelled = true; };
   }, [id]);
   
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchData() {
-      try {
-        setLoading(true);
-        const res = await api.get('/recruiter/me');
-        if (cancelled) return;
-        setData(res.data);
-        setError(null);
-      } catch (err: any) {
-        console.error(err);
-        setError(err?.response?.data?.message || 'Failed to load dashboard');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    fetchData();
-    return () => { cancelled = true; };
-  }, []);
+  // useEffect(() => {
+  //   let cancelled = false;
+  //   async function fetchData() {
+  //     try {
+  //       setLoading(true);
+  //       const res = await api.get('/recruiter/me');
+  //       if (cancelled) return;
+  //       setData(res.data);
+  //       setError(null);
+  //     } catch (err: any) {
+  //       console.error(err);
+  //       setError(err?.response?.data?.message || 'Failed to load dashboard');
+  //     } finally {
+  //       if (!cancelled) setLoading(false);
+  //     }
+  //   }
+  //   fetchData();
+  //   return () => { cancelled = true; };
+  // }, []);
 
   if (loading) {
     return (
