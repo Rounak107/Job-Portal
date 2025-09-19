@@ -15,15 +15,38 @@ type Application = {
 
 export default function ApplicationsPage() {
   const [apps, setApps] = useState<Application[]>([]);
+  const [filteredApps, setFilteredApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     api
       .get<Application[]>("/admin/applications")
-      .then((res) => setApps(res.data))
+      .then((res) => {
+        setApps(res.data);
+        setFilteredApps(res.data);
+      })
       .catch((err) => console.error("Failed to fetch applications", err))
       .finally(() => setLoading(false));
   }, []);
+
+  // Filter applications based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredApps(apps);
+    } else {
+      const term = searchTerm.toLowerCase();
+      const filtered = apps.filter(
+        (app) =>
+          app.applicantName?.toLowerCase().includes(term) ||
+          app.applicantEmail?.toLowerCase().includes(term) ||
+          app.jobTitle?.toLowerCase().includes(term) ||
+          app.jobCompany?.toLowerCase().includes(term) ||
+          app.status.toLowerCase().includes(term)
+      );
+      setFilteredApps(filtered);
+    }
+  }, [searchTerm, apps]);
 
   const getStatusConfig = (status: string) => {
     switch (status.toUpperCase()) {
@@ -124,8 +147,38 @@ export default function ApplicationsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="mb-8 animate-fade-in">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Applications Dashboard</h1>
-          <p className="text-gray-600">Track and manage all job applications across the platform</p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Applications Dashboard</h1>
+              <p className="text-gray-600">Track and manage all job applications across the platform</p>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="mt-4 md:mt-0 relative w-full md:w-80">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white/70 backdrop-blur-sm placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-200"
+                placeholder="Search applications..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                >
+                  <svg className="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
           
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
@@ -188,8 +241,25 @@ export default function ApplicationsPage() {
 
         {/* Applications Grid */}
         <div className="animate-slide-up">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Applications {filteredApps.length > 0 && `(${filteredApps.length})`}
+            </h2>
+            {searchTerm && (
+              <span className="text-sm text-gray-500">
+                Showing results for "<strong>{searchTerm}</strong>"
+                <button 
+                  onClick={() => setSearchTerm("")}
+                  className="ml-2 text-violet-600 hover:text-violet-800 text-sm font-medium"
+                >
+                  Clear search
+                </button>
+              </span>
+            )}
+          </div>
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {apps.map((app, index) => {
+            {filteredApps.map((app, index) => {
               const statusConfig = getStatusConfig(app.status);
               const applicantInitials = getApplicantInitials(app.applicantName);
               const companyInitials = getCompanyInitials(app.jobCompany);
@@ -262,15 +332,29 @@ export default function ApplicationsPage() {
             })}
           </div>
 
-          {apps.length === 0 && (
+          {filteredApps.length === 0 && (
             <div className="text-center py-12">
               <div className="mx-auto h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <svg className="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
-              <p className="text-gray-500">There are no job applications to display at the moment.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm ? "No matching applications found" : "No applications found"}
+              </h3>
+              <p className="text-gray-500">
+                {searchTerm 
+                  ? "Try adjusting your search terms or filters" 
+                  : "There are no job applications to display at the moment."}
+              </p>
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="mt-4 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+                >
+                  Clear Search
+                </button>
+              )}
             </div>
           )}
         </div>
