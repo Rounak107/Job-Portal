@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
+import { useNavigate } from "react-router-dom"; // Added for navigation
 
 type LatestApplication = {
   jobId?: number | null;
@@ -21,6 +22,7 @@ type Applicant = {
 export default function ApplicantsPage() {
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); // Added for navigation
 
   useEffect(() => {
     api
@@ -44,6 +46,16 @@ export default function ApplicantsPage() {
     if (count >= 5) return { label: 'Moderate Activity', color: 'bg-yellow-500', width: '60%' };
     if (count >= 1) return { label: 'Low Activity', color: 'bg-blue-500', width: '30%' };
     return { label: 'No Activity', color: 'bg-gray-400', width: '10%' };
+  };
+
+  // Function to handle view profile redirect
+  const handleViewProfile = (applicantId: number) => {
+    window.open(`https://www.jobrun.in/profile/${applicantId}`, '_blank');
+  };
+
+  // Function to handle applications redirect
+  const handleViewApplications = () => {
+    navigate('/admin/applications');
   };
 
   if (loading) {
@@ -153,6 +165,9 @@ export default function ApplicantsPage() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Member Since
                   </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    View Details
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
@@ -189,7 +204,12 @@ export default function ApplicantsPage() {
                       <td className="px-6 py-4">
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700">{a.applicationCount} applications</span>
+                            <button 
+                              onClick={handleViewApplications}
+                              className="text-sm font-medium text-gray-700 hover:text-indigo-600 hover:underline cursor-pointer"
+                            >
+                              {a.applicationCount} applications
+                            </button>
                             <span className={`text-xs px-2 py-1 rounded-full ${activity.color === 'bg-green-500' ? 'bg-green-100 text-green-800' : 
                               activity.color === 'bg-yellow-500' ? 'bg-yellow-100 text-yellow-800' : 
                               activity.color === 'bg-blue-500' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
@@ -245,6 +265,16 @@ export default function ApplicantsPage() {
                         <div className="text-xs text-gray-500">
                           {Math.floor((Date.now() - new Date(a.createdAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
                         </div>
+                      </td>
+
+                      {/* View Details Column */}
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleViewProfile(a.id)}
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm"
+                        >
+                          View Profile
+                        </button>
                       </td>
                     </tr>
                   );

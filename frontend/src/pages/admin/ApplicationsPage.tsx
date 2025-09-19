@@ -1,73 +1,104 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
-import { useNavigate } from "react-router-dom"; // Added for navigation
 
-type LatestApplication = {
-  jobId?: number | null;
-  jobTitle?: string | null;
-  company?: string | null;
-  status?: string | null;
-  appliedAt?: string | null;
-};
-
-type Applicant = {
+type Application = {
   id: number;
-  name: string;
-  email: string;
+  jobId?: number | null;
+  jobTitle?: string;
+  jobCompany?: string;
+  applicantId?: number | null;
+  applicantName?: string;
+  applicantEmail?: string;
+  status: string;
   createdAt: string;
-  applicationCount: number;
-  latestApplication?: LatestApplication | null;
 };
 
-export default function ApplicantsPage() {
-  const [applicants, setApplicants] = useState<Applicant[]>([]);
+export default function ApplicationsPage() {
+  const [apps, setApps] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate(); // Added for navigation
 
   useEffect(() => {
     api
-      .get<Applicant[]>("/admin/applicants")
-      .then((res) => setApplicants(res.data))
-      .catch((err) => console.error("Failed to fetch applicants", err))
+      .get<Application[]>("/admin/applications")
+      .then((res) => setApps(res.data))
+      .catch((err) => console.error("Failed to fetch applications", err))
       .finally(() => setLoading(false));
   }, []);
 
-  const getStatusColor = (status?: string | null) => {
-    switch (status?.toUpperCase()) {
-      case 'ACCEPTED': return 'bg-green-100 text-green-800';
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'REJECTED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const getStatusConfig = (status: string) => {
+    switch (status.toUpperCase()) {
+      case 'ACCEPTED':
+        return {
+          color: 'bg-green-100 text-green-800 border-green-200',
+          icon: '✓',
+          bgGradient: 'from-green-50 to-emerald-50',
+          priority: 1
+        };
+      case 'PENDING':
+        return {
+          color: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+          icon: '⏳',
+          bgGradient: 'from-yellow-50 to-amber-50',
+          priority: 2
+        };
+      case 'REJECTED':
+        return {
+          color: 'bg-red-100 text-red-800 border-red-200',
+          icon: '✗',
+          bgGradient: 'from-red-50 to-pink-50',
+          priority: 3
+        };
+      default:
+        return {
+          color: 'bg-gray-100 text-gray-800 border-gray-200',
+          icon: '?',
+          bgGradient: 'from-gray-50 to-slate-50',
+          priority: 4
+        };
     }
   };
 
-  const getActivityLevel = (count: number) => {
-    if (count >= 10) return { label: 'High Activity', color: 'bg-green-500', width: '100%' };
-    if (count >= 5) return { label: 'Moderate Activity', color: 'bg-yellow-500', width: '60%' };
-    if (count >= 1) return { label: 'Low Activity', color: 'bg-blue-500', width: '30%' };
-    return { label: 'No Activity', color: 'bg-gray-400', width: '10%' };
+  const getApplicantInitials = (name?: string) => {
+    if (!name) return '?';
+    return name.split(' ').map(n => n.charAt(0)).slice(0, 2).join('').toUpperCase();
   };
 
-  // Function to handle view profile redirect
-  const handleViewProfile = (applicantId: number) => {
-    window.open(`https://www.jobrun.in/profile/${applicantId}`, '_blank');
+  const getCompanyInitials = (company?: string) => {
+    if (!company) return '?';
+    return company.split(' ').map(n => n.charAt(0)).slice(0, 2).join('').toUpperCase();
   };
 
-  // Function to handle applications redirect
-  const handleViewApplications = () => {
-    navigate('/admin/applications');
+  const getTimeAgo = (createdAt: string) => {
+    const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60));
+    
+    if (hours < 1) return 'Just now';
+    if (hours < 24) return `${hours}h ago`;
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days}d ago`;
+    if (days < 30) return `${days}d ago`;
+    return `${Math.floor(days / 30)}mo ago`;
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-6">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 rounded-lg w-56 mb-8"></div>
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              <div className="h-16 bg-gray-100"></div>
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="h-20 border-b border-gray-100 bg-white"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl shadow-md p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+                    <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -76,53 +107,35 @@ export default function ApplicantsPage() {
     );
   }
 
-  const totalApplications = applicants.reduce((sum, a) => sum + a.applicationCount, 0);
-  const activeApplicants = applicants.filter(a => a.applicationCount > 0).length;
+  const statusCounts = apps.reduce((acc, app) => {
+    acc[app.status.toUpperCase()] = (acc[app.status.toUpperCase()] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const recentApplications = apps.filter(app => {
+    const days = Math.floor((Date.now() - new Date(app.createdAt).getTime()) / (1000 * 60 * 60 * 24));
+    return days <= 1;
+  }).length;
+
+  const uniqueCompanies = new Set(apps.map(app => app.jobCompany).filter(Boolean)).size;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-indigo-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
         <div className="mb-8 animate-fade-in">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Applicants Dashboard</h1>
-          <p className="text-gray-600">Monitor job seekers and their application activities</p>
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Applicants</p>
-                  <p className="text-2xl font-bold text-indigo-600">{applicants.length}</p>
-                </div>
-                <div className="h-12 w-12 bg-indigo-100 rounded-lg flex items-center justify-center">
-                  <svg className="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Active Applicants</p>
-                  <p className="text-2xl font-bold text-green-600">{activeApplicants}</p>
-                </div>
-                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Applications Dashboard</h1>
+          <p className="text-gray-600">Track and manage all job applications across the platform</p>
+          
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Applications</p>
-                  <p className="text-2xl font-bold text-purple-600">{totalApplications}</p>
+                  <p className="text-2xl font-bold text-violet-600">{apps.length}</p>
                 </div>
-                <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <svg className="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="h-12 w-12 bg-violet-100 rounded-lg flex items-center justify-center">
+                  <svg className="h-6 w-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
@@ -132,14 +145,40 @@ export default function ApplicantsPage() {
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Avg Applications</p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {applicants.length > 0 ? (totalApplications / applicants.length).toFixed(1) : '0'}
-                  </p>
+                  <p className="text-sm font-medium text-gray-600">Pending</p>
+                  <p className="text-2xl font-bold text-yellow-600">{statusCounts.PENDING || 0}</p>
                 </div>
-                <div className="h-12 w-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                  <svg className="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                <div className="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <svg className="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Accepted</p>
+                  <p className="text-2xl font-bold text-green-600">{statusCounts.ACCEPTED || 0}</p>
+                </div>
+                <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Recent (24h)</p>
+                  <p className="text-2xl font-bold text-indigo-600">{recentApplications}</p>
+                </div>
+                <div className="h-12 w-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <svg className="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                 </div>
               </div>
@@ -147,141 +186,93 @@ export default function ApplicantsPage() {
           </div>
         </div>
 
-        {/* Table Container */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-slide-up">
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Applicant Details
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Activity Level
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Latest Application
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Member Since
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    View Details
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-100">
-                {applicants.map((a, index) => {
-                  const activity = getActivityLevel(a.applicationCount);
-                  
-                  return (
-                    <tr 
-                      key={a.id}
-                      className="hover:bg-gray-50 transition-all duration-200 animate-fade-in-row group"
-                      style={{ animationDelay: `${index * 80}ms` }}
-                    >
-                      {/* Applicant Details */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12">
-                            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-                              <span className="text-white font-semibold text-lg">
-                                {a.name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-semibold text-gray-900">{a.name}</div>
-                            <div className="text-sm text-gray-500">{a.email}</div>
-                            <div className="text-xs text-gray-400 mt-1">
-                              <span className="bg-gray-100 px-2 py-0.5 rounded-full">ID: {a.id}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
+        {/* Applications Grid */}
+        <div className="animate-slide-up">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {apps.map((app, index) => {
+              const statusConfig = getStatusConfig(app.status);
+              const applicantInitials = getApplicantInitials(app.applicantName);
+              const companyInitials = getCompanyInitials(app.jobCompany);
+              const timeAgo = getTimeAgo(app.createdAt);
+              
+              return (
+                <div
+                  key={app.id}
+                  className={`bg-gradient-to-br ${statusConfig.bgGradient} rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-6 border border-gray-100 group animate-fade-in-card`}
+                  style={{ animationDelay: `${index * 80}ms` }}
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 bg-gradient-to-br from-violet-400 to-purple-500 rounded-full flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                        <span className="text-white font-bold text-sm">{applicantInitials}</span>
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{app.applicantName || 'Unknown Applicant'}</h3>
+                        <p className="text-sm text-gray-600">{app.applicantEmail || 'No email'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${statusConfig.color}`}>
+                        <span className="mr-1">{statusConfig.icon}</span>
+                        {app.status}
+                      </span>
+                    </div>
+                  </div>
 
-                      {/* Activity Level */}
-                      <td className="px-6 py-4">
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <button 
-                              onClick={handleViewApplications}
-                              className="text-sm font-medium text-gray-700 hover:text-indigo-600 hover:underline cursor-pointer"
-                            >
-                              {a.applicationCount} applications
-                            </button>
-                            <span className={`text-xs px-2 py-1 rounded-full ${activity.color === 'bg-green-500' ? 'bg-green-100 text-green-800' : 
-                              activity.color === 'bg-yellow-500' ? 'bg-yellow-100 text-yellow-800' : 
-                              activity.color === 'bg-blue-500' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                              {activity.label}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className={`${activity.color} h-2 rounded-full transition-all duration-1000 ease-out`}
-                              style={{ width: activity.width }}
-                            ></div>
-                          </div>
-                        </div>
-                      </td>
+                  {/* Job Details */}
+                  <div className="bg-white bg-opacity-60 rounded-lg p-4 mb-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="h-8 w-8 bg-gradient-to-br from-indigo-400 to-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-xs">{companyInitials}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-gray-900 truncate">{app.jobTitle || 'No Job Title'}</h4>
+                        <p className="text-sm text-gray-600 truncate">{app.jobCompany || 'Unknown Company'}</p>
+                      </div>
+                    </div>
+                  </div>
 
-                      {/* Latest Application */}
-                      <td className="px-6 py-4">
-                        {a.latestApplication?.jobTitle ? (
-                          <div className="space-y-2">
-                            <div className="text-sm font-medium text-gray-900">
-                              {a.latestApplication.jobTitle}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              at <span className="font-medium">{a.latestApplication.company || "Unknown Company"}</span>
-                            </div>
-                            {a.latestApplication.status && (
-                              <div className="flex items-center space-x-2">
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${getStatusColor(a.latestApplication.status)}`}>
-                                  {a.latestApplication.status}
-                                </span>
-                                {a.latestApplication.appliedAt && (
-                                  <span className="text-xs text-gray-500">
-                                    {Math.floor((Date.now() - new Date(a.latestApplication.appliedAt).getTime()) / (1000 * 60 * 60 * 24))}d ago
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="text-sm text-gray-400 italic">No applications yet</div>
-                        )}
-                      </td>
+                  {/* Footer */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 text-xs text-gray-500">
+                      <span className="bg-white bg-opacity-60 px-2 py-1 rounded-full">
+                        ID: {app.id}
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{timeAgo}</span>
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(app.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </div>
+                  </div>
 
-                      {/* Member Since */}
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 font-medium">
-                          {new Date(a.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {Math.floor((Date.now() - new Date(a.createdAt).getTime()) / (1000 * 60 * 60 * 24))} days ago
-                        </div>
-                      </td>
-
-                      {/* View Details Column */}
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => handleViewProfile(a.id)}
-                          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors text-sm"
-                        >
-                          View Profile
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  {/* Hover Effect Border */}
+                  <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-violet-200 transition-all duration-300 pointer-events-none"></div>
+                </div>
+              );
+            })}
           </div>
+
+          {apps.length === 0 && (
+            <div className="text-center py-12">
+              <div className="mx-auto h-24 w-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <svg className="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No applications found</h3>
+              <p className="text-gray-500">There are no job applications to display at the moment.</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -296,9 +287,9 @@ export default function ApplicantsPage() {
     to { opacity: 1; transform: translateY(0); }
   }
   
-  @keyframes fade-in-row {
-    from { opacity: 0; transform: translateX(-20px); }
-    to { opacity: 1; transform: translateX(0); }
+  @keyframes fade-in-card {
+    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
   
   .animate-fade-in {
@@ -309,9 +300,10 @@ export default function ApplicantsPage() {
     animation: slide-up 0.8s ease-out forwards;
   }
   
-  .animate-fade-in-row {
+  .animate-fade-in-card {
     opacity: 0;
-    animation: fade-in-row 0.5s ease-out forwards;
+    animation: fade-in-card 0.5s ease-out forwards;
+    position: relative;
   }
 `}</style>
     </div>
