@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // Add this import
 import { api } from "../../api";
 
 type Job = {
@@ -11,6 +12,7 @@ type Job = {
 export default function Jobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate(); // Add this hook
 
   useEffect(() => {
     api
@@ -49,6 +51,13 @@ export default function Jobs() {
     ];
     const index = company.length % colors.length;
     return colors[index];
+  };
+
+   // Add this function to handle navigation
+  const handleViewDetails = (job: Job) => {
+    // Create a URL-friendly slug from job title
+    const slug = `${job.id}_${job.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+    navigate(`/jobs/${slug}`);
   };
 
   if (loading) {
@@ -136,17 +145,17 @@ export default function Jobs() {
         {/* Jobs Grid */}
         <div className="animate-slide-up">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jobs.map((job, index) => {
-              const jobAge = getJobAge(job.createdAt);
-              const companyInitials = getCompanyInitials(job.company);
-              const companyColors = getCompanyColors(job.company);
-              
-              return (
-                <div
-                  key={job.id}
-                  className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-6 group cursor-pointer animate-fade-in-card"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
+             {jobs.map((job, index) => {
+    const jobAge = getJobAge(job.createdAt);
+    const companyInitials = getCompanyInitials(job.company);
+    const companyColors = getCompanyColors(job.company);
+    
+    return (
+      <div
+        key={job.id}
+        className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 p-6 group cursor-pointer animate-fade-in-card"
+        style={{ animationDelay: `${index * 100}ms` }}
+      >
                   {/* Header */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
@@ -178,27 +187,31 @@ export default function Jobs() {
                   </div>
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                    <div className="flex items-center space-x-2">
-                      <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 9l6-6m0 0l6 6m-6-6v12" />
-                      </svg>
-                      <span className="text-xs text-gray-500">
-                        {new Date(job.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })}
-                      </span>
-                    </div>
-                    
-                    <button className="opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-3 py-1 rounded-lg text-xs font-medium">
-                      View Details
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center space-x-2">
+            <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 9l6-6m0 0l6 6m-6-6v12" />
+            </svg>
+            <span className="text-xs text-gray-500">
+              {new Date(job.createdAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+              })}
+            </span>
+          </div>
+          
+          {/* Update this button to use the navigation function */}
+          <button 
+            onClick={() => handleViewDetails(job)}
+            className="opacity-0 group-hover:opacity-100 transition-opacity bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-3 py-1 rounded-lg text-xs font-medium"
+          >
+            View Details
+          </button>
+        </div>
+      </div>
+    );
+  })}
           </div>
 
           {jobs.length === 0 && (
