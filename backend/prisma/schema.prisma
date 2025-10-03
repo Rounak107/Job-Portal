@@ -1,10 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12,6 +5,86 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int                @id @default(autoincrement())
+  email        String             @unique
+  password     String
+  name         String
+  role         Role               @default(USER)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  loginCount   Int                @default(0)
+  bio          String?
+  education    String?
+  experience   String?
+  location     String?
+  phone        String?
+  profilePic   String?
+  resumeUrl    String?
+  skills       String?
+  applications Application[]
+  audits       ApplicationAudit[] @relation("AuditChangedBy")
+  jobs         Job[]              @relation("PostedJobs")
+  jobViews     JobView[]
+}
+
+model Job {
+  id           Int           @id @default(autoincrement())
+  title        String
+  description  String
+  company      String
+  location     String
+  postedById   Int
+  createdAt    DateTime      @default(now())
+  salaryMax    Int?
+  salaryMin    Int?
+  role         String?
+  workMode     WorkMode      @default(REMOTE)
+  views        Int           @default(0)
+  incentive    String?
+  workTime     String?
+  applications Application[]
+  postedBy     User          @relation("PostedJobs", fields: [postedById], references: [id])
+  jobViews     JobView[]
+}
+
+model Application {
+  id        Int                @id @default(autoincrement())
+  userId    Int
+  jobId     Int
+  resumeUrl String
+  createdAt DateTime           @default(now())
+  status    Status             @default(PENDING)
+  job       Job                @relation(fields: [jobId], references: [id])
+  user      User               @relation(fields: [userId], references: [id])
+  audits    ApplicationAudit[]
+}
+
+model ApplicationAudit {
+  id             Int         @id @default(autoincrement())
+  applicationId  Int
+  previousStatus Status
+  newStatus      Status
+  changedById    Int
+  note           String?
+  createdAt      DateTime    @default(now())
+  application    Application @relation(fields: [applicationId], references: [id])
+  changedBy      User        @relation("AuditChangedBy", fields: [changedById], references: [id])
+
+  @@index([applicationId])
+  @@index([changedById])
+}
+
+model JobView {
+  id        Int      @id @default(autoincrement())
+  jobId     Int
+  userId    Int?
+  ip        String?
+  createdAt DateTime @default(now())
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
 }
 
 enum Role {
@@ -33,93 +106,4 @@ enum WorkMode {
   HOME
   REMOTE
   HYBRID
-}
-
-model User {
-  id          Int                 @id @default(autoincrement())
-  name        String
-  email       String              @unique
-  password    String
-  role        Role                @default(USER)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  loginCount  Int                 @default(0)
-
-  bio         String?
-  phone       String?
-  location    String?
-  skills      String?   // comma-separated list (simple & enough for now)
-  experience  String?   // free-text experience summary
-  education   String?   // free-text education summary
-  profilePic  String?   // URL path to uploaded avatar
-  resumeUrl   String?   // URL path to user-level resume
-
-  jobs         Job[]              @relation("PostedJobs")
-  applications Application[]
-  audits       ApplicationAudit[] @relation("AuditChangedBy")
-  jobViews     JobView[]
-}
-
-model Job {
-  id          Int           @id @default(autoincrement())
-  title       String
-  description String
-  company     String
-  location    String
-  postedById  Int
-  createdAt   DateTime      @default(now())
-  
-  salaryMin   Int?
-  salaryMax   Int?
-  views       Int           @default(0)
-
-  workMode WorkMode @default(REMOTE)
-  role     String?
-    incentive   String?       
-  workTime    String?      
-
-  postedBy User @relation("PostedJobs", fields: [postedById], references: [id])
-
-  applications Application[]
-  jobViews     JobView[]       // 👈 opposite relation for JobView.job
-}
-
-model Application {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  jobId     Int
-  resumeUrl String
-  status    Status   @default(PENDING)
-  createdAt DateTime @default(now())
-
-  user   User @relation(fields: [userId], references: [id])
-  job    Job  @relation(fields: [jobId], references: [id])
-  audits ApplicationAudit[]
-}
-
-model ApplicationAudit {
-  id             Int      @id @default(autoincrement())
-  applicationId  Int
-  previousStatus Status
-  newStatus      Status
-  changedById    Int
-  note           String?
-  createdAt      DateTime @default(now())
-
-  application Application @relation(fields: [applicationId], references: [id])
-  changedBy   User        @relation("AuditChangedBy", fields: [changedById], references: [id])
-
-  @@index([applicationId])
-  @@index([changedById])
-}
-
-model JobView {
-  id        Int      @id @default(autoincrement())
-  jobId     Int
-  userId    Int?     // optional: which registered user viewed
-  ip        String?  // optional: request ip
-  createdAt DateTime @default(now())
-
-  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  user User? @relation(fields: [userId], references: [id])
 }
