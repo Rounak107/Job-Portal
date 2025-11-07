@@ -5,4 +5,4 @@
 
 */
 -- AlterTable
-ALTER TABLE "public"."Job" ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL;
+-- ALTER TABLE "public"."Job" ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL;
