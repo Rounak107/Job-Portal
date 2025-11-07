@@ -18,58 +18,43 @@ function logLine(line: string) {
   const file = path.join(logsDir, "email.log");
   const ts = new Date().toISOString();
   const final = `[${ts}] ${line}\n`;
-  try {
-    fs.appendFileSync(file, final);
-  } catch {}
+  try { fs.appendFileSync(file, final); } catch {}
   console.log(final.trim());
 }
 
 // ----------------- RESEND ONLY -----------------
-if (!RESEND_API_KEY) {
-  logLine("❌ ERROR: RESEND_API_KEY missing! Emails cannot be sent.");
-}
+if (!RESEND_API_KEY) logLine("❌ ERROR: RESEND_API_KEY is missing!");
 
 const resend = new Resend(RESEND_API_KEY);
 logLine(`✅ Resend Ready (from=${FROM_EMAIL})`);
 
-// ----------------- TEMPLATES -----------------
+// ----------------- LOAD TEMPLATES -----------------
 const templatesDir = path.join(__dirname, "..", "emails", "templates");
 const templates: Record<string, Handlebars.TemplateDelegate> = {};
 
-logLine(
-  `EMAIL BASES -> BACKEND_BASE_URL=${BACKEND_BASE_URL} FRONTEND_BASE_URL=${FRONTEND_BASE_URL}`
-);
+logLine(`EMAIL BASES -> BACKEND_BASE_URL=${BACKEND_BASE_URL} FRONTEND_BASE_URL=${FRONTEND_BASE_URL}`);
 
 function loadTemplates() {
-  try {
-    if (!fs.existsSync(templatesDir)) {
-      logLine(`❌ Templates folder missing: ${templatesDir}`);
-      return;
-    }
+  if (!fs.existsSync(templatesDir)) {
+    logLine(`❌ Templates directory not found: ${templatesDir}`);
+    return;
+  }
 
-    for (const f of fs.readdirSync(templatesDir)) {
-      if (!f.endsWith(".hbs")) continue;
-      const name = path.basename(f, ".hbs");
-      const content = fs.readFileSync(path.join(templatesDir, f), "utf8");
+  for (const file of fs.readdirSync(templatesDir)) {
+    if (file.endsWith(".hbs")) {
+      const name = path.basename(file, ".hbs");
+      const content = fs.readFileSync(path.join(templatesDir, file), "utf8");
       templates[name] = Handlebars.compile(content);
-      logLine(`✅ Loaded email template "${name}"`);
+      logLine(`✅ Loaded template "${name}"`);
     }
-  } catch (err: any) {
-    logLine(`❌ Error loading templates: ${err.message}`);
   }
 }
 loadTemplates();
 
-// ----------------- SEND TEMPLATE EMAIL -----------------
-async function sendEmailTemplate(
-  to: string,
-  subject: string,
-  templateName: string,
-  context: object
-) {
-  const tpl = templates[templateName];
-  const html = tpl
-    ? tpl(context)
+// ----------------- SEND EMAIL -----------------
+async function sendEmailTemplate(to: string, subject: string, template: string, context: any) {
+  let html = templates[template]
+    ? templates[template](context)
     : `<h3>${subject}</h3><pre>${JSON.stringify(context, null, 2)}</pre>`;
 
   const { data, error } = await resend.emails.send({
@@ -84,7 +69,7 @@ async function sendEmailTemplate(
     throw new Error(error.message);
   }
 
-  logLine(`✅ SENT to=${to} subject="${subject}" messageId=${data?.id}`);
+  logLine(`✅ SENT to=${to} subject="${subject}" id=${data?.id}`);
   return data;
 }
 
@@ -101,21 +86,9 @@ type EmailJob = {
 };
 
 const emailQueue: EmailJob[] = [];
-let emailWorkerRunning = false;
+let workerRunning = false;
 
-function enqueueEmail({
-  to,
-  subject,
-  template,
-  context,
-  maxAttempts = 3,
-}: {
-  to: string;
-  subject: string;
-  template: string;
-  context: object;
-  maxAttempts?: number;
-}) {
+function enqueueEmail({ to, subject, template, context, maxAttempts = 3 }: any) {
   const job: EmailJob = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     to,
@@ -128,40 +101,36 @@ function enqueueEmail({
   };
 
   emailQueue.push(job);
-  logLine(
-    `📬 ENQUEUED id=${job.id} to=${job.to} subj="${job.subject}" template="${job.template}"`
-  );
+  logLine(`📬 QUEUED id=${job.id} to=${job.to}`);
 
-  if (!emailWorkerRunning) process.nextTick(emailWorker);
+  if (!workerRunning) process.nextTick(workerLoop);
   return job.id;
 }
 
 async function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function emailWorker() {
-  emailWorkerRunning = true;
+async function workerLoop() {
+  workerRunning = true;
 
   while (emailQueue.length > 0) {
     const job = emailQueue[0];
 
     if (job.nextAttemptAt > Date.now()) {
-      await sleep(500);
+      await sleep(400);
       continue;
     }
 
     try {
-      job.attempts += 1;
+      job.attempts++;
       await sendEmailTemplate(job.to, job.subject, job.template, job.context);
       emailQueue.shift();
     } catch (err: any) {
-      logLine(
-        `❌ ERROR attempt=${job.attempts} to=${job.to} subj="${job.subject}" err=${err.message}`
-      );
+      logLine(`❌ ERROR attempt=${job.attempts} to=${job.to}: ${err.message}`);
 
       if (job.attempts >= job.maxAttempts) {
-        logLine(`💀 GAVE UP id=${job.id} to=${job.to}`);
+        logLine(`💀 GAVE UP id=${job.id}`);
         emailQueue.shift();
       } else {
         job.nextAttemptAt = Date.now() + Math.pow(2, job.attempts) * 1000;
@@ -169,10 +138,11 @@ async function emailWorker() {
     }
   }
 
-  emailWorkerRunning = false;
+  workerRunning = false;
 }
 
-// ----------------- PUBLIC HELPERS -----------------
+// ----------------- PUBLIC EMAIL FUNCTIONS -----------------
+
 export function sendWelcomeEmail(to: string, name?: string) {
   return enqueueEmail({
     to,
@@ -184,6 +154,7 @@ export function sendWelcomeEmail(to: string, name?: string) {
 
 export function sendApplicantEmail(to: string, jobTitle: string, resumeUrl?: string) {
   const fullUrl = resumeUrl ? BACKEND_BASE_URL + resumeUrl : null;
+
   return enqueueEmail({
     to,
     subject: `Application Received — ${jobTitle}`,
@@ -201,14 +172,9 @@ export function sendPasswordResetEmail(to: string, name: string, resetUrl: strin
   });
 }
 
-export function sendRecruiterNewApplicationEmail(
-  to: string,
-  jobTitle: string,
-  applicantName: string,
-  applicantEmail: string,
-  resumeUrl?: string
-) {
+export function sendRecruiterNewApplicationEmail(to: string, jobTitle: string, applicantName: string, applicantEmail: string, resumeUrl?: string) {
   const fullUrl = resumeUrl ? BACKEND_BASE_URL + resumeUrl : null;
+
   return enqueueEmail({
     to,
     subject: `New Application — ${jobTitle}`,
@@ -217,14 +183,7 @@ export function sendRecruiterNewApplicationEmail(
   });
 }
 
-export function sendStatusUpdateEmail(
-  applicantEmail: string,
-  applicantName: string,
-  jobTitle: string,
-  status: string,
-  recruiterEmail?: string,
-  note?: string
-) {
+export function sendStatusUpdateEmail(applicantEmail: string, applicantName: string, jobTitle: string, status: string, recruiterEmail?: string, note?: string) {
   return enqueueEmail({
     to: applicantEmail,
     subject: `Your application status for ${jobTitle} is now ${status}`,
@@ -233,10 +192,17 @@ export function sendStatusUpdateEmail(
   });
 }
 
-export async function sendTestEmailNow(
-  to: string,
-  subject = "Test Email",
-  body = { hello: "world" }
-) {
-  return sendEmailTemplate(to, subject, "statusUpdate", body);
+// ✅ THE MISSING ONE — REQUIRED BY YOUR CONTROLLER
+export function sendRecruiterStatusUpdateEmail(recruiterEmail: string, recruiterName: string, jobTitle: string, applicantName: string, applicantEmail: string, status: string, note?: string) {
+  return enqueueEmail({
+    to: recruiterEmail,
+    subject: `Applicant status updated for ${jobTitle}`,
+    template: "recruiterStatusUpdate",
+    context: { recruiterName, jobTitle, applicantName, applicantEmail, status, note },
+  });
+}
+
+// Test endpoint helper
+export async function sendTestEmailNow(to: string) {
+  return sendEmailTemplate(to, "Test Email", "statusUpdate", { hello: "world" });
 }
