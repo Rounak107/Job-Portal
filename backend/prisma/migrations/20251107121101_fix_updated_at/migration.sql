@@ -6,3 +6,5 @@
 */
 -- AlterTable
 -- ALTER TABLE "public"."Job" ADD COLUMN     "updatedAt" TIMESTAMP(3) NOT NULL;
+
+-- Migration skipped because column already exists
