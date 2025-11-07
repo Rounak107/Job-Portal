@@ -38,6 +38,7 @@ model Job {
   location     String
   postedById   Int
   createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   salaryMax    Int?
   salaryMin    Int?
   role         String?
