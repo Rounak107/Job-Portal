@@ -1,8 +1,8 @@
 // backend/src/services/emailService.ts
-import nodemailer from 'nodemailer';
 import fs from 'fs';
 import path from 'path';
 import Handlebars from 'handlebars';
+import { Resend } from 'resend';
 
 // ----------------- ENV -----------------
 const SMTP_HOST = process.env.SMTP_HOST || '';
@@ -12,6 +12,8 @@ const SMTP_PASS = process.env.SMTP_PASS || '';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Job Run <no-reply@example.local>';
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || 'http://localhost:5173';
 const BACKEND_BASE_URL  = process.env.BACKEND_BASE_URL  || 'http://localhost:5000';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+const EMAIL_FROM_ENV = process.env.EMAIL_FROM || FROM_EMAIL;
 
 // ----------------- LOGGING -----------------
 const logsDir = path.join(process.cwd(), 'logs');
@@ -25,24 +27,55 @@ function logLine(line: string) {
   console.log(final.trim());
 }
 
-// ----------------- TRANSPORT -----------------
-const transporter = nodemailer.createTransport({
-  host: SMTP_HOST,
-  port: SMTP_PORT,
-  secure: SMTP_PORT === 465,
-  auth: SMTP_USER && SMTP_PASS ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
-});
+// ----------------- TRANSPORT (Resend first, SMTP fallback) -----------------
+let useResend = !!RESEND_API_KEY;
+let resend: Resend | null = null;
+let transporter: any = null;
 
-transporter.verify()
-  .then(() => logLine(`SMTP READY (host=${SMTP_HOST}, port=${SMTP_PORT}, user=${SMTP_USER})`))
-  .catch((e) => logLine(`SMTP VERIFY FAILED: ${e?.message || e}`));
+(async () => {
+  if (useResend) {
+    resend = new Resend(RESEND_API_KEY);
+    logLine(`Resend READY (from=${EMAIL_FROM_ENV})`);
+  } else {
+    const nodemailer = (await import('nodemailer')).default;
+    transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: SMTP_PORT,
+      secure: SMTP_PORT === 465,
+      auth: SMTP_USER && SMTP_PASS ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
+    });
+    try {
+      await transporter.verify();
+      logLine(`SMTP READY (host=${SMTP_HOST}, port=${SMTP_PORT}, user=${SMTP_USER})`);
+    } catch (e: any) {
+      logLine(`SMTP VERIFY FAILED: ${e?.message || e}`);
+    }
+  }
+})();
+
+async function sendHtml(to: string, subject: string, html: string) {
+  if (useResend && resend) {
+    const { data, error } = await resend.emails.send({
+      from: EMAIL_FROM_ENV,
+      to,
+      subject,
+      html,
+    });
+    if (error) throw new Error(error.message || String(error));
+    return data;
+  }
+
+  if (transporter) {
+    return transporter.sendMail({ from: EMAIL_FROM_ENV, to, subject, html });
+  }
+
+  throw new Error('No email transport available');
+}
 
 // ----------------- TEMPLATES -----------------
 const templatesDir = path.join(__dirname, '..', 'emails', 'templates');
 const templates: Record<string, Handlebars.TemplateDelegate> = {};
 
-console.log('Templates directory at runtime:', templatesDir);
-// in emailService.ts after constants
 logLine(`EMAIL BASES -> BACKEND_BASE_URL=${BACKEND_BASE_URL} FRONTEND_BASE_URL=${FRONTEND_BASE_URL}`);
 
 function loadTemplates() {
@@ -66,6 +99,7 @@ function loadTemplates() {
 }
 loadTemplates();
 
+// ----------------- SEND TEMPLATE -----------------
 async function sendEmailTemplate(to: string, subject: string, templateName: string, context: object) {
   let html: string;
   const tpl = templates[templateName];
@@ -77,7 +111,7 @@ async function sendEmailTemplate(to: string, subject: string, templateName: stri
     logLine(`Template "${templateName}" not found; sending fallback HTML.`);
   }
 
-  const info = await transporter.sendMail({ from: FROM_EMAIL, to, subject, html });
+  const info = await sendHtml(to, subject, html);
   logLine(`SENT to=${to} subject="${subject}" messageId=${(info as any)?.messageId ?? 'n/a'}`);
   return info;
 }
@@ -157,7 +191,7 @@ export function sendWelcomeEmail(to: string, name?: string) {
     to,
     subject: `Welcome to JobRun`,
     template: 'welcome',
-    context: { name, baseUrl: FRONTEND_BASE_URL }, 
+    context: { name, baseUrl: FRONTEND_BASE_URL },
   });
 }
 
@@ -171,7 +205,7 @@ export function sendApplicantEmail(
     to,
     subject: `Application Received — ${jobTitle}`,
     template: 'applicantReceived',
-    context: { jobTitle, fullResumeUrl }, // ✅ send only fullResumeUrl
+    context: { jobTitle, fullResumeUrl },
   });
 }
 
@@ -192,17 +226,16 @@ export function sendRecruiterNewApplicationEmail(
   applicantEmail: string,
   resumeUrl?: string
 ) {
-  const fullResumeUrl = resumeUrl ? `${BACKEND_BASE_URL}${resumeUrl}` : null; // ✅ FIXED
+  const fullResumeUrl = resumeUrl ? `${BACKEND_BASE_URL}${resumeUrl}` : null;
   return enqueueEmail({
     to,
     subject: `New Application — ${jobTitle}`,
     template: 'recruiterNewApplication',
-    context: { jobTitle, applicantName, applicantEmail, fullResumeUrl }, // ✅ use fullResumeUrl
+    context: { jobTitle, applicantName, applicantEmail, fullResumeUrl },
     maxAttempts: 3,
   });
 }
 
-// Applicant mail on status change
 export function sendStatusUpdateEmail(
   applicantEmail: string,
   applicantName: string,
@@ -221,12 +254,11 @@ export function sendStatusUpdateEmail(
       status,
       recruiterEmail,
       note,
-      isAccepted: status === 'ACCEPTED',   // <-- add this line
+      isAccepted: status === 'ACCEPTED',
     },
   });
 }
 
-/** Recruiter mail when they update applicant status */
 export function sendRecruiterStatusUpdateEmail(
   recruiterEmail: string,
   recruiterName: string,
