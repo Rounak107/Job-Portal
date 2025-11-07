@@ -15,29 +15,40 @@ dotenv.config(); // Load .env
 
 const app = express();
 
-// ✅ Use environment variable FRONTEND_URLS
-const allowedOrigins = (process.env.FRONTEND_URLS || '')
-  .split(',')
+// ✅ FRONTEND ORIGINS
+const allowedOrigins = (process.env.FRONTEND_URLS || "")
+  .split(",")
   .map(o => o.trim())
-  .filter(o => o !== '');
+  .filter(o => o.length > 0);
 
-// ✅ Allow localhost in dev
-allowedOrigins.push('http://localhost:5173');
+// ✅ Always allow localhost for testing
+allowedOrigins.push("http://localhost:5173");
+
+// ✅ LOG final allowed origins
+console.log("✅ Allowed CORS Origins:", allowedOrigins);
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow Postman
-      if (allowedOrigins.includes(origin)) {
+      console.log("🌍 Incoming request from origin:", origin);
+
+      if (!origin) {
+        // Postman or mobile apps
         return callback(null, true);
-      } else {
-        console.warn(`❌ Blocked by CORS: ${origin}`);
-        return callback(new Error('Not allowed by CORS'));
       }
+
+      if (allowedOrigins.includes(origin)) {
+        console.log("✅ CORS Allowed:", origin);
+        return callback(null, true);
+      }
+
+      console.log("❌ CORS BLOCKED:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
 );
+
 
 app.use(
   '/uploads',
