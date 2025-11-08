@@ -90,7 +90,12 @@ export default function AdminDashboard() {
     
     const fetchStats = async () => {
       try {
-        const res = await api.get<Stats>("/admin/stats");
+        const res = await api.get<Stats>("/admin/stats", {
+  headers: {
+    Authorization: "Bearer dummy-admin",
+  },
+});
+
         if (mounted) {
           setStats(res.data);
           setError(null);

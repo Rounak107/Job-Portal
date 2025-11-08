@@ -26,6 +26,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
       return res.status(401).json({ message: 'No Authorization header provided' });
     }
 
+    // ✅ Allow dummy admin login for frontend admin panel
+if (authHeader === "Bearer dummy-admin") {
+  (req as any).user = { id: 1, role: "ADMIN", email: "admin@jobrun.in" };
+  return next();
+}
+
     // Accept either: "Bearer <token>" or just "<token>"
     let token = authHeader;
 
