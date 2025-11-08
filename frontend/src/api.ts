@@ -31,7 +31,7 @@ export function setAuthToken(token: string | null) {
 }
 
 // ✅ Load saved token on refresh
-const saved = localStorage.getItem("adminToken");
+const saved = localStorage.getItem("jobportal_token");
 if (saved) setAuthToken(saved);
 
 

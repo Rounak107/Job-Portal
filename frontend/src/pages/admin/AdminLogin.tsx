@@ -14,16 +14,16 @@ export default function AdminLogin() {
   e.preventDefault();
 
   if (ALLOWED_ADMINS.includes(email)) {
-    // ✅ store fake admin token
-    localStorage.setItem("isAdmin", "true");
-    localStorage.setItem("adminEmail", email);
-    localStorage.setItem("adminToken", "dummy-admin");
+  const token = "dummy-admin";
 
-    // ✅ set token in axios instance globally
-    setAuthToken("dummy-admin");
+  localStorage.setItem("isAdmin", "true");
+  localStorage.setItem("adminEmail", email);
+  localStorage.setItem("jobportal_token", token);   // unified key
 
-    navigate("/admin");
-  } else {
+  setAuthToken(token);  // adds Bearer header to axios
+  navigate("/admin");
+}
+ else {
     setError("Access denied. Only authorized admins can login.");
   }
 };
