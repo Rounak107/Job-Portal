@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { setAuthToken } from "../../api"; 
 
 const ALLOWED_ADMINS = ["rajugroupinfo@gmail.com", "rounakbhuiya@gmail.com"];
 
@@ -10,16 +11,22 @@ export default function AdminLogin() {
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (ALLOWED_ADMINS.includes(email)) {
-      localStorage.setItem("isAdmin", "true");
-      localStorage.setItem("adminEmail", email);
-      navigate("/admin");
-    } else {
-      setError("Access denied. Only authorized admins can login.");
-    }
-  };
+  if (ALLOWED_ADMINS.includes(email)) {
+    // ✅ store fake admin token
+    localStorage.setItem("isAdmin", "true");
+    localStorage.setItem("adminEmail", email);
+    localStorage.setItem("adminToken", "dummy-admin");
+
+    // ✅ set token in axios instance globally
+    setAuthToken("dummy-admin");
+
+    navigate("/admin");
+  } else {
+    setError("Access denied. Only authorized admins can login.");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

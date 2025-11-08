@@ -13,21 +13,43 @@ if (!API_BASE) {
   throw new Error('VITE_API_BASE environment variable is required');
 }
 
-const api = axios.create({
+export const api = axios.create({
   baseURL: API_BASE,
-  withCredentials: true, // if needed
-  timeout: 10000, // ✅ Consider adding timeout
+  withCredentials: true,
+  timeout: 10000,
 });
 
-// Token management (this is perfect)
+// ✅ Set token helper
 export function setAuthToken(token: string | null) {
   if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    localStorage.setItem('jobportal_token', token);
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    localStorage.setItem("jobportal_token", token);
   } else {
-    delete api.defaults.headers.common['Authorization'];
-    localStorage.removeItem('jobportal_token');
+    delete api.defaults.headers.common["Authorization"];
+    localStorage.removeItem("jobportal_token");
   }
 }
 
-export { api }; // ✅ Make sure to export api
+// ✅ Load saved token on refresh
+const saved = localStorage.getItem("adminToken");
+if (saved) setAuthToken(saved);
+
+
+// const api = axios.create({
+//   baseURL: API_BASE,
+//   withCredentials: true, // if needed
+//   timeout: 10000, // ✅ Consider adding timeout
+// });
+
+// // Token management (this is perfect)
+// export function setAuthToken(token: string | null) {
+//   if (token) {
+//     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+//     localStorage.setItem('jobportal_token', token);
+//   } else {
+//     delete api.defaults.headers.common['Authorization'];
+//     localStorage.removeItem('jobportal_token');
+//   }
+// }
+
+// export { api }; // ✅ Make sure to export api
