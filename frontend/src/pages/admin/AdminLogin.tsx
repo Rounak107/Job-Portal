@@ -21,10 +21,9 @@ export default function AdminLogin() {
       localStorage.removeItem("adminToken");
 
       // ✅ Then set the correct token and flags
-      localStorage.setItem("isAdmin", "true");
-      localStorage.setItem("adminEmail", email);
-      localStorage.setItem("jobportal_token", token);
-      setAuthToken(token); // attaches Bearer dummy-admin to axios
+      localStorage.setItem("admin_token", "dummy-admin");
+localStorage.setItem("isAdmin", "true");
+setAuthToken("dummy-admin"); // sets header
 
       // ✅ Finally, navigate
       navigate("/admin");

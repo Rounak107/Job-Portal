@@ -26,8 +26,15 @@ export function setAuthToken(token: string | null) {
 }
 
 // ✅ Always load saved token on refresh
-const saved = localStorage.getItem('jobportal_token');
-if (saved) setAuthToken(saved);
+const savedUser = localStorage.getItem("jobportal_token");
+const savedAdmin = localStorage.getItem("admin_token");
+
+if (savedAdmin) {
+  api.defaults.headers.common["Authorization"] = `Bearer ${savedAdmin}`;
+} else if (savedUser) {
+  api.defaults.headers.common["Authorization"] = `Bearer ${savedUser}`;
+}
+
 
 
 
