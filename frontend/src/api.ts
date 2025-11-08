@@ -2,25 +2,10 @@
 import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
+export const api = axios.create({ baseURL: API_BASE, timeout: 20000 });
+export const adminApi = axios.create({ baseURL: API_BASE, timeout: 20000 });
 
-if (!API_BASE) {
-  console.error("❌ Missing VITE_API_BASE env var");
-  throw new Error("Missing VITE_API_BASE");
-}
-
-// === General API (used by normal auth system) ===
-export const api = axios.create({
-  baseURL: API_BASE,
-  timeout: 20000,
-});
-
-// === ADMIN-ONLY API INSTANCE ===
-export const adminApi = axios.create({
-  baseURL: API_BASE,
-  timeout: 20000,
-});
-
-// 🟢 Token Setters
+// ---- USER token ----
 export function setAuthToken(token: string | null) {
   if (token) {
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -31,6 +16,7 @@ export function setAuthToken(token: string | null) {
   }
 }
 
+// ---- ADMIN token ----
 export function setAdminToken(token: string | null) {
   if (token) {
     adminApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -41,12 +27,12 @@ export function setAdminToken(token: string | null) {
   }
 }
 
-// ✅ Auto-load tokens at startup
-const userToken = localStorage.getItem("jobportal_token");
-const adminToken = localStorage.getItem("admin_token");
+// ---- Auto-load on startup ----
+const admin = localStorage.getItem("admin_token");
+const user = localStorage.getItem("jobportal_token");
+if (admin) setAdminToken(admin);
+else if (user) setAuthToken(user);
 
-if (userToken) setAuthToken(userToken);
-if (adminToken) setAdminToken(adminToken);
 
 
 

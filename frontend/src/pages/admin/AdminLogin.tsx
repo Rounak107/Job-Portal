@@ -22,6 +22,7 @@ export default function AdminLogin() {
       localStorage.setItem("isAdmin", "true");
       localStorage.setItem("adminEmail", email);
       setAdminToken("dummy-admin");
+console.log("Header now set to:", localStorage.getItem("admin_token"));
 
       // ✅ Go to dashboard
       navigate("/admin");
