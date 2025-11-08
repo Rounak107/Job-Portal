@@ -1,39 +1,52 @@
 // frontend/src/api.ts
-import axios from 'axios';
+import axios from "axios";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
 if (!API_BASE) {
-  console.error('❌ VITE_API_BASE missing. Please set it in your .env or Vercel dashboard.');
-  throw new Error('VITE_API_BASE environment variable is required.');
+  console.error("❌ Missing VITE_API_BASE env var");
+  throw new Error("Missing VITE_API_BASE");
 }
 
-// Create global axios instance
+// === General API (used by normal auth system) ===
 export const api = axios.create({
   baseURL: API_BASE,
-  timeout: 20000, // allow longer cold-starts on Render
+  timeout: 20000,
 });
 
-// ✅ Unified token setter
+// === ADMIN-ONLY API INSTANCE ===
+export const adminApi = axios.create({
+  baseURL: API_BASE,
+  timeout: 20000,
+});
+
+// 🟢 Token Setters
 export function setAuthToken(token: string | null) {
   if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    localStorage.setItem('jobportal_token', token);
+    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    localStorage.setItem("jobportal_token", token);
   } else {
-    delete api.defaults.headers.common['Authorization'];
-    localStorage.removeItem('jobportal_token');
+    delete api.defaults.headers.common["Authorization"];
+    localStorage.removeItem("jobportal_token");
   }
 }
 
-// ✅ Always load saved token on refresh
-const savedUser = localStorage.getItem("jobportal_token");
-const savedAdmin = localStorage.getItem("admin_token");
-
-if (savedAdmin) {
-  api.defaults.headers.common["Authorization"] = `Bearer ${savedAdmin}`;
-} else if (savedUser) {
-  api.defaults.headers.common["Authorization"] = `Bearer ${savedUser}`;
+export function setAdminToken(token: string | null) {
+  if (token) {
+    adminApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    localStorage.setItem("admin_token", token);
+  } else {
+    delete adminApi.defaults.headers.common["Authorization"];
+    localStorage.removeItem("admin_token");
+  }
 }
+
+// ✅ Auto-load tokens at startup
+const userToken = localStorage.getItem("jobportal_token");
+const adminToken = localStorage.getItem("admin_token");
+
+if (userToken) setAuthToken(userToken);
+if (adminToken) setAdminToken(adminToken);
 
 
 

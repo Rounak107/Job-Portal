@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { setAuthToken } from "../../api";
+import { setAdminToken } from "../../api";
 
 const ALLOWED_ADMINS = ["rajugroupinfo@gmail.com", "rounakbhuiya@gmail.com"];
 
@@ -14,18 +14,16 @@ export default function AdminLogin() {
     e.preventDefault();
 
     if (ALLOWED_ADMINS.includes(email)) {
-      const token = "dummy-admin";
-
-      // ✅ First clear old junk
+      // ✅ Clear old tokens
       localStorage.removeItem("jobportal_token");
-      localStorage.removeItem("adminToken");
+      localStorage.removeItem("jobportal_user");
 
-      // ✅ Then set the correct token and flags
-      localStorage.setItem("admin_token", "dummy-admin");
-localStorage.setItem("isAdmin", "true");
-setAuthToken("dummy-admin"); // sets header
+      // ✅ Save admin credentials
+      localStorage.setItem("isAdmin", "true");
+      localStorage.setItem("adminEmail", email);
+      setAdminToken("dummy-admin");
 
-      // ✅ Finally, navigate
+      // ✅ Go to dashboard
       navigate("/admin");
     } else {
       setError("Access denied. Only authorized admins can login.");
@@ -34,12 +32,8 @@ setAuthToken("dummy-admin"); // sets header
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <form
-        onSubmit={handleSubmit}
-        className="p-6 bg-white shadow-md rounded w-96 space-y-4"
-      >
+      <form onSubmit={handleSubmit} className="p-6 bg-white shadow-md rounded w-96 space-y-4">
         <h1 className="text-xl font-bold">Admin Login</h1>
-
         <input
           type="email"
           placeholder="Email"
@@ -48,7 +42,6 @@ setAuthToken("dummy-admin"); // sets header
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-
         <input
           type="password"
           placeholder="Password (optional)"
@@ -56,13 +49,8 @@ setAuthToken("dummy-admin"); // sets header
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-
         {error && <p className="text-red-600">{error}</p>}
-
-        <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-        >
+        <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
           Login
         </button>
       </form>

@@ -1,7 +1,7 @@
 // frontend/src/pages/admin/AdminDashboard.tsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../../api";
+import { adminApi } from "../../api";
 
 type Stats = {
   totalRecruiters: number;
@@ -86,34 +86,24 @@ export default function AdminDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let mounted = true;
-    
-    const fetchStats = async () => {
-      try {
-        const res = await api.get<Stats>("/admin/stats");
-        if (mounted) {
-          setStats(res.data);
-          setError(null);
-        }
-      } catch (err) {
-        console.error("failed admin stats", err);
-        if (mounted) {
-          setError("Failed to load dashboard statistics");
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+  let mounted = true;
+  const fetchStats = async () => {
+    try {
+      const res = await adminApi.get("/admin/stats");
+      if (mounted) {
+        setStats(res.data);
+        setError(null);
       }
-    };
-
-    // Add a small delay to show loading animation
-    setTimeout(fetchStats, 800);
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    } catch (err) {
+      console.error("failed admin stats", err);
+      if (mounted) setError("Failed to load dashboard statistics");
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  };
+  setTimeout(fetchStats, 800);
+  return () => (mounted = false);
+}, []);
 
   if (loading) return <LoadingSkeleton />;
   
