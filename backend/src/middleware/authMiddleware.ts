@@ -28,7 +28,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
     // ✅ Allow dummy admin login for frontend admin panel
 if (authHeader === "Bearer dummy-admin") {
-  (req as any).user = { id: 1, role: "ADMIN", email: "admin@jobrun.in" };
+  (req as any).user = { id: 9999, role: "admin", email: "admin@jobrun.in", isFakeAdmin: true };
   return next();
 }
 
