@@ -40,7 +40,16 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/admin" element={<AdminDashboard />} />
+              <Route
+  path="/admin"
+  element={
+    localStorage.getItem("isAdmin") === "true" ? (
+      <AdminDashboard />
+    ) : (
+      <AdminLogin />
+    )
+  }
+/>
               <Route path="/admin/recruiters" element={<RecruitersPage />} />
 <Route path="/admin/applicants" element={<ApplicantsPage />} />
 <Route path="/admin/jobs" element={<Jobs />} />

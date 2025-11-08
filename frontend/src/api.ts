@@ -1,38 +1,34 @@
 // frontend/src/api.ts
 import axios from 'axios';
 
-// ✅ ADD VALIDATION - This will catch missing env during build
 const API_BASE = import.meta.env.VITE_API_BASE;
 
 if (!API_BASE) {
-  // This will show up in browser console and build logs
-  console.error('❌ VITE_API_BASE is missing! Check your Vercel environment variables.');
-  console.error('Current import.meta.env:', import.meta.env);
-  
-  // Optional: Throw error to make it more visible
-  throw new Error('VITE_API_BASE environment variable is required');
+  console.error('❌ VITE_API_BASE missing. Please set it in your .env or Vercel dashboard.');
+  throw new Error('VITE_API_BASE environment variable is required.');
 }
 
+// Create global axios instance
 export const api = axios.create({
   baseURL: API_BASE,
-  withCredentials: true,
-  timeout: 10000,
+  timeout: 20000, // allow longer cold-starts on Render
 });
 
-// ✅ Set token helper
+// ✅ Unified token setter
 export function setAuthToken(token: string | null) {
   if (token) {
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    localStorage.setItem("jobportal_token", token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    localStorage.setItem('jobportal_token', token);
   } else {
-    delete api.defaults.headers.common["Authorization"];
-    localStorage.removeItem("jobportal_token");
+    delete api.defaults.headers.common['Authorization'];
+    localStorage.removeItem('jobportal_token');
   }
 }
 
-// ✅ Load saved token on refresh
-const saved = localStorage.getItem("jobportal_token");
+// ✅ Always load saved token on refresh
+const saved = localStorage.getItem('jobportal_token');
 if (saved) setAuthToken(saved);
+
 
 
 // const api = axios.create({

@@ -16,11 +16,13 @@ export default function AdminLogin() {
   if (ALLOWED_ADMINS.includes(email)) {
   const token = "dummy-admin";
 
-  localStorage.setItem("isAdmin", "true");
-  localStorage.setItem("adminEmail", email);
-  localStorage.setItem("jobportal_token", token);   // unified key
+  localStorage.setItem("jobportal_token", "dummy-admin");
+setAuthToken("dummy-admin");
 
-  setAuthToken(token);  // adds Bearer header to axios
+localStorage.removeItem("jobportal_token");
+localStorage.removeItem("adminToken");
+
+  // adds Bearer header to axios
   navigate("/admin");
 }
  else {
