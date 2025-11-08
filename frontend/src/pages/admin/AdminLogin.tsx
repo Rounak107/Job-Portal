@@ -1,34 +1,37 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { setAuthToken } from "../../api"; 
+import { setAuthToken } from "../../api";
 
 const ALLOWED_ADMINS = ["rajugroupinfo@gmail.com", "rounakbhuiya@gmail.com"];
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState(""); // optional, static
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (ALLOWED_ADMINS.includes(email)) {
-  const token = "dummy-admin";
+    if (ALLOWED_ADMINS.includes(email)) {
+      const token = "dummy-admin";
 
-  localStorage.setItem("jobportal_token", "dummy-admin");
-setAuthToken("dummy-admin");
+      // ✅ First clear old junk
+      localStorage.removeItem("jobportal_token");
+      localStorage.removeItem("adminToken");
 
-localStorage.removeItem("jobportal_token");
-localStorage.removeItem("adminToken");
+      // ✅ Then set the correct token and flags
+      localStorage.setItem("isAdmin", "true");
+      localStorage.setItem("adminEmail", email);
+      localStorage.setItem("jobportal_token", token);
+      setAuthToken(token); // attaches Bearer dummy-admin to axios
 
-  // adds Bearer header to axios
-  navigate("/admin");
-}
- else {
-    setError("Access denied. Only authorized admins can login.");
-  }
-};
+      // ✅ Finally, navigate
+      navigate("/admin");
+    } else {
+      setError("Access denied. Only authorized admins can login.");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -59,7 +62,7 @@ localStorage.removeItem("adminToken");
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
         >
           Login
         </button>

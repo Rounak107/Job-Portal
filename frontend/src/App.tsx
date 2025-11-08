@@ -73,7 +73,6 @@ export default function App() {
     </PrivateRoute>
   }
 />
-
               <Route
                 path="/recruiter/applicants"
                 element={
