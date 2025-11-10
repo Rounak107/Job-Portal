@@ -24,19 +24,13 @@ export default function ApplicantsPage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate(); // Added for navigation
 
-   useEffect(() => {
-    const adminEmail = localStorage.getItem("adminEmail"); // ✅ Get admin email
-    
+  useEffect(() => {
     api
-      .get<Applicant[]>("/admin/applicants", {
-        headers: {
-          'x-admin-email': adminEmail // ✅ Add email header
-        }
-      })
+      .get<Applicant[]>("/admin/applicants")
       .then((res) => setApplicants(res.data))
       .catch((err) => console.error("Failed to fetch applicants", err))
       .finally(() => setLoading(false));
-  }, []);;
+  }, []);
 
   const getStatusColor = (status?: string | null) => {
     switch (status?.toUpperCase()) {
