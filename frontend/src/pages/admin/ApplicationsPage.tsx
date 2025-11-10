@@ -20,14 +20,8 @@ export default function ApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    const adminEmail = localStorage.getItem("adminEmail"); // ✅ Get admin email
-    
     api
-      .get<Application[]>("/admin/applications", {
-        headers: {
-          'x-admin-email': adminEmail // ✅ Add email header
-        }
-      })
+      .get<Application[]>("/admin/applications")
       .then((res) => {
         setApps(res.data);
         setFilteredApps(res.data);

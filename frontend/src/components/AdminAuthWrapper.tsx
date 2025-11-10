@@ -6,7 +6,6 @@ import ApplicantsPage from '../pages/admin/ApplicantsPage';
 import Jobs from '../pages/admin/Jobs';
 import ApplicationsPage from '../pages/admin/ApplicationsPage';
 import { useLocation } from 'react-router-dom';
-import { setAuthToken } from '../api'; // ✅ Import setAuthToken
 
 export default function AdminAuthWrapper() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -17,19 +16,14 @@ export default function AdminAuthWrapper() {
     const checkAdminStatus = () => {
       const adminStatus = localStorage.getItem("isAdmin") === "true";
       setIsAdmin(adminStatus);
-      
-      // ✅ Set token for ALL admin routes
-      if (adminStatus) {
-        localStorage.setItem("jobportal_token", "dummy-admin");
-        setAuthToken("dummy-admin");
-      }
-      
       setLoading(false);
     };
 
     checkAdminStatus();
 
+    // Check admin status every second for changes
     const interval = setInterval(checkAdminStatus, 1000);
+
     return () => clearInterval(interval);
   }, []);
 

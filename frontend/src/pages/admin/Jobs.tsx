@@ -15,14 +15,8 @@ export default function Jobs() {
   const navigate = useNavigate(); // Add this hook
 
   useEffect(() => {
-    const adminEmail = localStorage.getItem("adminEmail"); // ✅ Get admin email
-    
     api
-      .get<Job[]>("/admin/jobs", {
-        headers: {
-          'x-admin-email': adminEmail // ✅ Add email header
-        }
-      })
+      .get<Job[]>("/admin/jobs")
       .then((res) => setJobs(res.data))
       .catch((err) => console.error("Failed to fetch jobs", err))
       .finally(() => setLoading(false));

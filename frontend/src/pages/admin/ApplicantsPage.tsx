@@ -36,7 +36,7 @@ export default function ApplicantsPage() {
       .then((res) => setApplicants(res.data))
       .catch((err) => console.error("Failed to fetch applicants", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, []);;
 
   const getStatusColor = (status?: string | null) => {
     switch (status?.toUpperCase()) {

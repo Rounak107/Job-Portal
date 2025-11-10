@@ -37,50 +37,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(!!localStorage.getItem(TOKEN_KEY));
 
   useEffect(() => {
-  async function rehydrate() {
-    const storedToken = localStorage.getItem(TOKEN_KEY);
-    
-    // ✅ Skip if it's admin token
-    if (storedToken === "dummy-admin") {
+    async function rehydrate() {
+      const storedToken = localStorage.getItem(TOKEN_KEY);
+      if (storedToken === "dummy-admin") {
       console.log("Admin token detected, skipping auth rehydration");
       setLoading(false);
       return;
     }
-    
-    if (!storedToken) {
-      setLoading(false);
-      return;
+      try {
+        setAuthToken(storedToken);
+        const res = await api.get('/users/me');
+        const u = res.data.user;
+        setUser(u);
+        setToken(storedToken);
+      } catch (err) {
+        console.warn('Auth rehydrate failed, clearing token', err);
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(USER_KEY);
+        setUser(null);
+        setToken(null);
+        setAuthToken(null);
+      } finally {
+        setLoading(false);
+      }
     }
-    
-    try {
-      setAuthToken(storedToken);
-      
-      // ✅ Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Auth timeout')), 5000)
-      );
-      
-      const authPromise = api.get('/users/me');
-      
-      // Race between API call and timeout
-      const res = await Promise.race([authPromise, timeoutPromise]) as any;
-      
-      const u = res.data.user;
-      setUser(u);
-      setToken(storedToken);
-    } catch (err) {
-      console.warn('Auth rehydrate failed, clearing token', err);
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
-      setUser(null);
-      setToken(null);
-      setAuthToken(null);
-    } finally {
-      setLoading(false);
-    }
-  }
-  rehydrate();
-}, []);
+    rehydrate();
+  }, []);
 
   const login = async ({ email, password }: LoginPayload) => {
     const res = await api.post('/users/login', { email, password });
