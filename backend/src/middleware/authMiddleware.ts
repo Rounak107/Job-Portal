@@ -43,6 +43,18 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     // Optional debug logging (remove or reduce in production)
     // console.debug('authMiddleware: verifying token:', token.slice(0, 10) + '...');
 
+    // ✅ ADD THIS: Handle dummy-admin token BEFORE JWT verification
+    if (token === "dummy-admin") {
+      console.log("✅ Dummy admin token detected - granting admin access");
+      (req as any).user = { 
+        id: 9999, 
+        role: "ADMIN",  // Make sure this is "ADMIN" (uppercase)
+        email: "admin@jobrun.in", 
+        isFakeAdmin: true 
+      };
+      return next();
+    }
+
     const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string; role: string; [k: string]: any };
 
     // Attach user payload to req
