@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { setAuthToken } from "../../api";
 
 const ALLOWED_ADMINS = ["rajugroupinfo@gmail.com", "rounakbhuiya@gmail.com"];
+const ADMIN_PASSWORD = "Rahul@338";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -12,7 +13,7 @@ export default function AdminLogin() {
 
   const handleSubmit = (e: React.FormEvent) => {
   e.preventDefault();
-  if (ALLOWED_ADMINS.includes(email)) {
+  if (ALLOWED_ADMINS.includes(email) && password === ADMIN_PASSWORD) {
     // ✅ Set the dummy-admin token in the RIGHT storage key
     localStorage.setItem("jobportal_token", "dummy-admin");
     localStorage.setItem("isAdmin", "true");
