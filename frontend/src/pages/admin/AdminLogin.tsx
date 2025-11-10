@@ -14,17 +14,16 @@ export default function AdminLogin() {
   const handleSubmit = (e: React.FormEvent) => {
   e.preventDefault();
   if (ALLOWED_ADMINS.includes(email) && password === ADMIN_PASSWORD) {
-    // ✅ Set the dummy-admin token in the RIGHT storage key
     localStorage.setItem("jobportal_token", "dummy-admin");
     localStorage.setItem("isAdmin", "true");
     localStorage.setItem("adminEmail", email);
     
-    // ✅ Force set the token in axios headers
     setAuthToken("dummy-admin");
     
-    navigate("/admin");
+    // ✅ Force refresh to trigger route change
+    window.location.href = "/admin";
   } else {
-    setError("Access denied. Only authorized admins can login.");
+    setError("Access denied. Invalid email or password.");
   }
 };
 

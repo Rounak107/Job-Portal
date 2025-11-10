@@ -21,6 +21,7 @@ import ApplicantsPage from "./pages/admin/ApplicantsPage";
 import Jobs from "./pages/admin/Jobs";
 import ApplicationsPage from "./pages/admin/ApplicationsPage";
 import AdminLogin from "./pages/admin/AdminLogin";
+import AdminAuthWrapper from "./components/AdminAuthWrapper";
 
 const theme = createTheme({
   typography: { fontFamily: `"Inter", "Roboto", "Helvetica", "Arial", sans-serif` },
@@ -47,54 +48,13 @@ export default function App() {
               <Route path="/saved-jobs" element={<SavedJobs />} />
 
               {/* Admin routes with inline check */}
-              <Route
-                path="/admin"
-                element={
-                  localStorage.getItem("isAdmin") === "true"
-                    ? <AdminDashboard />
-                    : <AdminLogin />
-                }
-              />
-              <Route
-                path="/admin/recruiters"
-                element={
-                  localStorage.getItem("isAdmin") === "true"
-                    ? <RecruitersPage />
-                    : <AdminLogin />
-                }
-              />
-              <Route
-                path="/admin/applicants"
-                element={
-                  localStorage.getItem("isAdmin") === "true"
-                    ? <ApplicantsPage />
-                    : <AdminLogin />
-                }
-              />
-              <Route
-                path="/admin/jobs"
-                element={
-                  localStorage.getItem("isAdmin") === "true"
-                    ? <Jobs />
-                    : <AdminLogin />
-                }
-              />
-              <Route
-                path="/admin/applications"
-                element={
-                  localStorage.getItem("isAdmin") === "true"
-                    ? <ApplicationsPage />
-                    : <AdminLogin />
-                }
-              />
-              <Route
-                path="/admin/recruiters/:id"
-                element={
-                  localStorage.getItem("isAdmin") === "true"
-                    ? <RecruiterDashboard />
-                    : <AdminLogin />
-                }
-              />
+              {/* Admin routes */}
+<Route path="/admin" element={<AdminAuthWrapper />} />
+<Route path="/admin/recruiters" element={<AdminAuthWrapper />} />
+<Route path="/admin/applicants" element={<AdminAuthWrapper />} />
+<Route path="/admin/jobs" element={<AdminAuthWrapper />} />
+<Route path="/admin/applications" element={<AdminAuthWrapper />} />
+<Route path="/admin/recruiters/:id" element={<AdminAuthWrapper />} />
 
               {/* Recruiter and user-specific protected routes */}
               <Route
