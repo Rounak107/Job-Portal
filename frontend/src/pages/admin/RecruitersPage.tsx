@@ -16,9 +16,15 @@ export default function RecruitersPage() {
   const [recruiters, setRecruiters] = useState<Recruiter[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+   useEffect(() => {
+    const adminEmail = localStorage.getItem("adminEmail"); // ✅ Get admin email
+    
     api
-      .get<Recruiter[]>("/admin/recruiters")
+      .get<Recruiter[]>("/admin/recruiters", {
+        headers: {
+          'x-admin-email': adminEmail // ✅ Add email header
+        }
+      })
       .then((res) => setRecruiters(res.data))
       .catch((err) => console.error("Failed to fetch recruiters", err))
       .finally(() => setLoading(false));

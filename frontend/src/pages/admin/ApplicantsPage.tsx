@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
-import { useNavigate } from "react-router-dom"; // Added for navigation
+import { useNavigate } from "react-router-dom";
 
 type LatestApplication = {
   jobId?: number | null;
@@ -22,12 +22,19 @@ type Applicant = {
 export default function ApplicantsPage() {
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate(); // Added for navigation
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const adminEmail = localStorage.getItem("adminEmail");
+    
+    // ✅ FIXED: Use correct endpoint "/admin/applicants" not "/admin/applications"
     api
-      .get<Applicant[]>("/admin/applicants")
-      .then((res) => setApplicants(res.data))
+      .get<Applicant[]>("/admin/applicants", {  // ✅ Changed from "/admin/applications"
+        headers: {
+          'x-admin-email': adminEmail
+        }
+      })
+      .then((res) => setApplicants(res.data))  // ✅ Use setApplicants, not setApps
       .catch((err) => console.error("Failed to fetch applicants", err))
       .finally(() => setLoading(false));
   }, []);
