@@ -94,17 +94,33 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-   useEffect(() => {
-    console.log("Current token:", localStorage.getItem("jobportal_token"));
+  // ✅ MUST BE FIRST - Set token before anything else
+  useEffect(() => {
+    if (localStorage.getItem("isAdmin") === "true") {
+      console.log("Setting admin token...");
+      localStorage.setItem("jobportal_token", "dummy-admin");
+      setAuthToken("dummy-admin");
+    }
+  }, []); // Empty dependency array = runs first
+
+  // Debug - runs after token is set
+  useEffect(() => {
+    console.log("Current token after set:", localStorage.getItem("jobportal_token"));
     console.log("Is admin:", localStorage.getItem("isAdmin"));
   }, []);
 
 useEffect(() => {
-  // Force set admin token on every admin page load
+  console.log("=== ADMIN DASHBOARD DEBUG ===");
+  console.log("1. Is Admin:", localStorage.getItem("isAdmin"));
+  console.log("2. Token before set:", localStorage.getItem("jobportal_token"));
+  
   if (localStorage.getItem("isAdmin") === "true") {
     localStorage.setItem("jobportal_token", "dummy-admin");
     setAuthToken("dummy-admin");
   }
+  
+  console.log("3. Token after set:", localStorage.getItem("jobportal_token"));
+  console.log("4. Axios headers:", api.defaults.headers.common.Authorization);
 }, []);
 
   useEffect(() => {
