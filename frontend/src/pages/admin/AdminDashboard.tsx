@@ -12,7 +12,6 @@ type Stats = {
   applicationsByStatus: Record<string, number>;
 };
 
-
 // Animated Counter Component
 const AnimatedCounter = ({ value, duration = 2000 }: { value: number; duration?: number }) => {
   const [count, setCount] = useState(0);
@@ -101,34 +100,22 @@ export default function AdminDashboard() {
       localStorage.setItem("jobportal_token", "dummy-admin");
       setAuthToken("dummy-admin");
     }
-  }, []); // Empty dependency array = runs first
-
-  // Debug - runs after token is set
-  useEffect(() => {
-    console.log("Current token after set:", localStorage.getItem("jobportal_token"));
-    console.log("Is admin:", localStorage.getItem("isAdmin"));
   }, []);
-
-useEffect(() => {
-  console.log("=== ADMIN DASHBOARD DEBUG ===");
-  console.log("1. Is Admin:", localStorage.getItem("isAdmin"));
-  console.log("2. Token before set:", localStorage.getItem("jobportal_token"));
-  
-  if (localStorage.getItem("isAdmin") === "true") {
-    localStorage.setItem("jobportal_token", "dummy-admin");
-    setAuthToken("dummy-admin");
-  }
-  
-  console.log("3. Token after set:", localStorage.getItem("jobportal_token"));
-  console.log("4. Axios headers:", api.defaults.headers.common.Authorization);
-}, []);
 
   useEffect(() => {
     let mounted = true;
     
     const fetchStats = async () => {
       try {
-        const res = await api.get<Stats>("/admin/stats");
+        const adminEmail = localStorage.getItem("adminEmail");
+        
+        // ✅ Send email in header for backend verification
+        const res = await api.get<Stats>("/admin/stats", {
+          headers: {
+            'x-admin-email': adminEmail
+          }
+        });
+        
         if (mounted) {
           setStats(res.data);
           setError(null);
@@ -145,12 +132,8 @@ useEffect(() => {
       }
     };
 
-    // Add a small delay to show loading animation
     setTimeout(fetchStats, 800);
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   if (loading) return <LoadingSkeleton />;
@@ -254,21 +237,34 @@ useEffect(() => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Header */}
+      {/* Header with LOGOUT BUTTON */}
       <div className="bg-white/80 backdrop-blur-sm border-b border-white/20 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  Admin Dashboard
+                </h1>
+                <p className="text-gray-500 text-sm">Comprehensive overview of your platform</p>
+              </div>
+            </div>
+            
+            {/* ✅ LOGOUT BUTTON */}
+            <button
+              onClick={logoutAdmin}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                Admin Dashboard
-              </h1>
-              <p className="text-gray-500 text-sm">Comprehensive overview of your platform</p>
-            </div>
+              <span>Logout</span>
+            </button>
           </div>
         </div>
       </div>
