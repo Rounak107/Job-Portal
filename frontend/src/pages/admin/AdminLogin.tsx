@@ -10,16 +10,21 @@ export default function AdminLogin() {
   const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (ALLOWED_ADMINS.includes(email)) {
-      localStorage.setItem("isAdmin", "true");
-      localStorage.setItem("adminEmail", email);
-      navigate("/admin");
-    } else {
-      setError("Access denied. Only authorized admins can login.");
-    }
-  };
+  e.preventDefault();
+  if (ALLOWED_ADMINS.includes(email)) {
+    // ✅ Set the dummy-admin token in the RIGHT storage key
+    localStorage.setItem("jobportal_token", "dummy-admin");
+    localStorage.setItem("isAdmin", "true");
+    localStorage.setItem("adminEmail", email);
+    
+    // ✅ Force set the token in axios headers
+    setAuthToken("dummy-admin");
+    
+    navigate("/admin");
+  } else {
+    setError("Access denied. Only authorized admins can login.");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

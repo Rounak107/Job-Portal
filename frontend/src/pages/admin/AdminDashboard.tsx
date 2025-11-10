@@ -11,6 +11,11 @@ type Stats = {
   applicationsByStatus: Record<string, number>;
 };
 
+useEffect(() => {
+  console.log("Current token:", localStorage.getItem("jobportal_token"));
+  console.log("Is admin:", localStorage.getItem("isAdmin"));
+}, []);
+
 // Animated Counter Component
 const AnimatedCounter = ({ value, duration = 2000 }: { value: number; duration?: number }) => {
   const [count, setCount] = useState(0);
@@ -35,6 +40,13 @@ const AnimatedCounter = ({ value, duration = 2000 }: { value: number; duration?:
   }, [value, duration]);
 
   return <span>{count.toLocaleString()}</span>;
+};
+
+const logoutAdmin = () => {
+  localStorage.removeItem("jobportal_token");
+  localStorage.removeItem("isAdmin");
+  localStorage.removeItem("adminEmail");
+  window.location.href = "/admin";
 };
 
 // Status color mapping

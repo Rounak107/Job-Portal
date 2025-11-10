@@ -9,8 +9,8 @@ import Header from "./components/Header";
 import { AuthProvider } from "./auth/AuthProvider";
 import PrivateRoute from "./components/PrivateRoute";
 import JobDetails from "./pages/JobDetails";
-import RecruiterApplicants from './pages/RecruiterApplicants';
-import JobCreate from './pages/JobCreate';
+import RecruiterApplicants from "./pages/RecruiterApplicants";
+import JobCreate from "./pages/JobCreate";
 import SavedJobs from "./pages/SavedJobs";
 import Profile from "./pages/Profile";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -28,6 +28,8 @@ const theme = createTheme({
 });
 
 export default function App() {
+  const isAdmin = localStorage.getItem("isAdmin") === "true";
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -36,39 +38,55 @@ export default function App() {
           <Header />
           <main className="max-w-6xl mx-auto p-4">
             <Routes>
+              {/* Public routes */}
               <Route path="/" element={<JobsPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/recruiters" element={<RecruitersPage />} />
-<Route path="/admin/applicants" element={<ApplicantsPage />} />
-<Route path="/admin/jobs" element={<Jobs />} />
-<Route path="/admin/applications" element={<ApplicationsPage />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/jobs/:idSlug" element={<JobDetails/>} />
+              <Route path="/jobs/:idSlug" element={<JobDetails />} />
               <Route path="/bjrTd5q89FP0q1/admin/login" element={<AdminLogin />} />
+              <Route path="/saved-jobs" element={<SavedJobs />} />
+
+              {/* Admin routes (guarded by localStorage check) */}
+              <Route
+                path="/admin"
+                element={isAdmin ? <AdminDashboard /> : <AdminLogin />}
+              />
+              <Route
+                path="/admin/recruiters"
+                element={isAdmin ? <RecruitersPage /> : <AdminLogin />}
+              />
+              <Route
+                path="/admin/applicants"
+                element={isAdmin ? <ApplicantsPage /> : <AdminLogin />}
+              />
+              <Route
+                path="/admin/jobs"
+                element={isAdmin ? <Jobs /> : <AdminLogin />}
+              />
+              <Route
+                path="/admin/applications"
+                element={isAdmin ? <ApplicationsPage /> : <AdminLogin />}
+              />
+              <Route
+                path="/admin/recruiters/:id"
+                element={isAdmin ? <RecruiterDashboard /> : <AdminLogin />}
+              />
+
+              {/* Recruiter and user-specific protected routes */}
               <Route
                 path="/recruiter"
                 element={
-                  <PrivateRoute roles={['RECRUITER','ADMIN']}>
+                  <PrivateRoute roles={["RECRUITER", "ADMIN"]}>
                     <RecruiterDashboard />
                   </PrivateRoute>
                 }
               />
               <Route
-  path="/admin/recruiters/:id"
-  element={
-    <PrivateRoute roles={['ADMIN']}>
-      <RecruiterDashboard />
-    </PrivateRoute>
-  }
-/>
-
-              <Route
                 path="/recruiter/applicants"
                 element={
-                  <PrivateRoute roles={['RECRUITER','ADMIN']}>
+                  <PrivateRoute roles={["RECRUITER", "ADMIN"]}>
                     <RecruiterApplicants />
                   </PrivateRoute>
                 }
@@ -76,32 +94,29 @@ export default function App() {
               <Route
                 path="/jobs/new"
                 element={
-                  <PrivateRoute roles={['RECRUITER', 'ADMIN']}>
+                  <PrivateRoute roles={["RECRUITER", "ADMIN"]}>
                     <JobCreate />
                   </PrivateRoute>
                 }
               />
 
-              {/* ONLY USER can open their own profile */}
+              {/* Profiles */}
               <Route
                 path="/profile"
                 element={
-                  <PrivateRoute roles={['USER']}>
+                  <PrivateRoute roles={["USER"]}>
                     <Profile />
                   </PrivateRoute>
                 }
               />
-              {/* Recruiter/Admin can view applicant profile by id */}
               <Route
                 path="/profile/:userId"
                 element={
-                  <PrivateRoute roles={['RECRUITER','ADMIN']}>
+                  <PrivateRoute roles={["RECRUITER", "ADMIN"]}>
                     <Profile />
                   </PrivateRoute>
                 }
               />
-
-              <Route path="/saved-jobs" element={<SavedJobs />} />
             </Routes>
           </main>
         </BrowserRouter>
