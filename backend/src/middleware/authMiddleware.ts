@@ -4,10 +4,13 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || '';
 
 if (!JWT_SECRET) {
+  // fail fast in dev if secret is missing
+  // In production, prefer not to crash — but log clearly.
   console.error('JWT_SECRET is not set in environment. Auth will fail.');
 }
 
 function stripQuotes(s: string) {
+  // remove surrounding single/double quotes if presenta
   if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
     return s.slice(1, -1);
   }
@@ -16,14 +19,17 @@ function stripQuotes(s: string) {
 
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Authorization header keys are normalized to lowercase in Node
     const authHeader = (req.headers.authorization as string) || (req.headers.Authorization as unknown as string);
 
     if (!authHeader) {
       return res.status(401).json({ message: 'No Authorization header provided' });
     }
 
+    // Accept either: "Bearer <token>" or just "<token>"
     let token = authHeader;
 
+    // If header uses the Bearer scheme, split it
     if (authHeader.toLowerCase().startsWith('bearer ')) {
       token = authHeader.split(' ')[1];
     }
@@ -34,23 +40,16 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
     token = stripQuotes(token).trim();
 
-    // ✅ ADD EMAIL VERIFICATION for dummy-admin
-    if (token === "dummy-admin") {
-      const ALLOWED_ADMINS = ["rajugroupinfo@gmail.com", "rounakbhuiya@gmail.com"];
-      
-      // Get admin email from frontend header
-      const adminEmailHeader = req.headers['x-admin-email'] as string;
-      
-      if (!adminEmailHeader || !ALLOWED_ADMINS.includes(adminEmailHeader)) {
-        console.log("❌ Unauthorized admin access attempt:", adminEmailHeader);
-        return res.status(403).json({ message: 'Admin access denied' });
-      }
+    // Optional debug logging (remove or reduce in production)
+    // console.debug('authMiddleware: verifying token:', token.slice(0, 10) + '...');
 
-      console.log("✅ Admin access granted to:", adminEmailHeader);
+    // ✅ ADD THIS: Handle dummy-admin token BEFORE JWT verification
+    if (token === "dummy-admin") {
+      console.log("✅ Dummy admin token detected - granting admin access");
       (req as any).user = { 
         id: 9999, 
-        role: "ADMIN",
-        email: adminEmailHeader,
+        role: "ADMIN",  // Make sure this is "ADMIN" (uppercase)
+        email: "admin@jobrun.in", 
         isFakeAdmin: true 
       };
       return next();
@@ -58,10 +57,12 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 
     const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string; role: string; [k: string]: any };
 
+    // Attach user payload to req
     (req as any).user = {
       id: decoded.id,
       email: decoded.email,
       role: decoded.role,
+      // include any other decoded properties if needed
     };
 
     return next();
