@@ -1,57 +1,33 @@
 // frontend/src/api.ts
-import axios from "axios";
+import axios from 'axios';
 
+// ✅ ADD VALIDATION - This will catch missing env during build
 const API_BASE = import.meta.env.VITE_API_BASE;
-export const api = axios.create({ baseURL: API_BASE, timeout: 20000 });
-export const adminApi = axios.create({ baseURL: API_BASE, timeout: 20000 });
 
-// ---- USER token ----
+if (!API_BASE) {
+  // This will show up in browser console and build logs
+  console.error('❌ VITE_API_BASE is missing! Check your Vercel environment variables.');
+  console.error('Current import.meta.env:', import.meta.env);
+  
+  // Optional: Throw error to make it more visible
+  throw new Error('VITE_API_BASE environment variable is required');
+}
+
+const api = axios.create({
+  baseURL: API_BASE,
+  withCredentials: true, // if needed
+  timeout: 10000, // ✅ Consider adding timeout
+});
+
+// Token management (this is perfect)
 export function setAuthToken(token: string | null) {
   if (token) {
-    api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    localStorage.setItem("jobportal_token", token);
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    localStorage.setItem('jobportal_token', token);
   } else {
-    delete api.defaults.headers.common["Authorization"];
-    localStorage.removeItem("jobportal_token");
+    delete api.defaults.headers.common['Authorization'];
+    localStorage.removeItem('jobportal_token');
   }
 }
 
-// ---- ADMIN token ----
-export function setAdminToken(token: string | null) {
-  if (token) {
-    adminApi.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    localStorage.setItem("admin_token", token);
-  } else {
-    delete adminApi.defaults.headers.common["Authorization"];
-    localStorage.removeItem("admin_token");
-  }
-}
-
-// ---- Auto-load on startup ----
-const admin = localStorage.getItem("admin_token");
-const user = localStorage.getItem("jobportal_token");
-if (admin) setAdminToken(admin);
-else if (user) setAuthToken(user);
-
-
-
-
-
-// const api = axios.create({
-//   baseURL: API_BASE,
-//   withCredentials: true, // if needed
-//   timeout: 10000, // ✅ Consider adding timeout
-// });
-
-// // Token management (this is perfect)
-// export function setAuthToken(token: string | null) {
-//   if (token) {
-//     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-//     localStorage.setItem('jobportal_token', token);
-//   } else {
-//     delete api.defaults.headers.common['Authorization'];
-//     localStorage.removeItem('jobportal_token');
-//   }
-// }
-
-// export { api }; // ✅ Make sure to export api
+export { api }; // ✅ Make sure to export api

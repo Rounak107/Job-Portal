@@ -14,25 +14,17 @@ export const roleMiddleware = (roles: Role[]) => {
 
 export async function requireAdmin(req: any, res: Response, next: NextFunction) {
   try {
-
-    console.log("requireAdmin -> user:", req.user);
-
-    // Allow fake admin injected by authMiddleware
-    if (req.user?.isFakeAdmin && req.user.role?.toLowerCase() === "admin") {
-      return next();
-    }
-
     if (!req.user?.id) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
 
-    if (!user || user.role?.toLowerCase() !== "admin") {
+    if (!user || user.role !== "ADMIN") {
       return res.status(403).json({ error: "Forbidden — Admins only" });
     }
 
-    req.user = user; // attach verified user
+    req.user = user; // attach fresh user with role
     next();
   } catch (err) {
     console.error("requireAdmin failed", err);

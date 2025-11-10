@@ -32,19 +32,20 @@ app.use(
     origin: function (origin, callback) {
       console.log("🌍 Incoming request from origin:", origin);
 
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+      if (!origin) {
+        // Postman or mobile apps
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        console.log("✅ CORS Allowed:", origin);
+        return callback(null, true);
+      }
 
       console.log("❌ CORS BLOCKED:", origin);
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-
-    // ✅ This is critical
-    allowedHeaders: ["Content-Type", "Authorization"],
-
-    // Optional but recommended
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   })
 );
 
