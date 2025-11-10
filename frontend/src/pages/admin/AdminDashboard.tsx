@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../../api";
+import { setAuthToken } from "../../api";
 
 type Stats = {
   totalRecruiters: number;
@@ -97,6 +98,14 @@ export default function AdminDashboard() {
     console.log("Current token:", localStorage.getItem("jobportal_token"));
     console.log("Is admin:", localStorage.getItem("isAdmin"));
   }, []);
+
+useEffect(() => {
+  // Force set admin token on every admin page load
+  if (localStorage.getItem("isAdmin") === "true") {
+    localStorage.setItem("jobportal_token", "dummy-admin");
+    setAuthToken("dummy-admin");
+  }
+}, []);
 
   useEffect(() => {
     let mounted = true;
