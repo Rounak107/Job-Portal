@@ -11,10 +11,6 @@ type Stats = {
   applicationsByStatus: Record<string, number>;
 };
 
-useEffect(() => {
-  console.log("Current token:", localStorage.getItem("jobportal_token"));
-  console.log("Is admin:", localStorage.getItem("isAdmin"));
-}, []);
 
 // Animated Counter Component
 const AnimatedCounter = ({ value, duration = 2000 }: { value: number; duration?: number }) => {
@@ -96,6 +92,11 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+   useEffect(() => {
+    console.log("Current token:", localStorage.getItem("jobportal_token"));
+    console.log("Is admin:", localStorage.getItem("isAdmin"));
+  }, []);
 
   useEffect(() => {
     let mounted = true;

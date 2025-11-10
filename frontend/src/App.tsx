@@ -28,8 +28,6 @@ const theme = createTheme({
 });
 
 export default function App() {
-  const isAdmin = localStorage.getItem("isAdmin") === "true";
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -48,30 +46,54 @@ export default function App() {
               <Route path="/bjrTd5q89FP0q1/admin/login" element={<AdminLogin />} />
               <Route path="/saved-jobs" element={<SavedJobs />} />
 
-              {/* Admin routes (guarded by localStorage check) */}
+              {/* Admin routes with inline check */}
               <Route
                 path="/admin"
-                element={isAdmin ? <AdminDashboard /> : <AdminLogin />}
+                element={
+                  localStorage.getItem("isAdmin") === "true"
+                    ? <AdminDashboard />
+                    : <AdminLogin />
+                }
               />
               <Route
                 path="/admin/recruiters"
-                element={isAdmin ? <RecruitersPage /> : <AdminLogin />}
+                element={
+                  localStorage.getItem("isAdmin") === "true"
+                    ? <RecruitersPage />
+                    : <AdminLogin />
+                }
               />
               <Route
                 path="/admin/applicants"
-                element={isAdmin ? <ApplicantsPage /> : <AdminLogin />}
+                element={
+                  localStorage.getItem("isAdmin") === "true"
+                    ? <ApplicantsPage />
+                    : <AdminLogin />
+                }
               />
               <Route
                 path="/admin/jobs"
-                element={isAdmin ? <Jobs /> : <AdminLogin />}
+                element={
+                  localStorage.getItem("isAdmin") === "true"
+                    ? <Jobs />
+                    : <AdminLogin />
+                }
               />
               <Route
                 path="/admin/applications"
-                element={isAdmin ? <ApplicationsPage /> : <AdminLogin />}
+                element={
+                  localStorage.getItem("isAdmin") === "true"
+                    ? <ApplicationsPage />
+                    : <AdminLogin />
+                }
               />
               <Route
                 path="/admin/recruiters/:id"
-                element={isAdmin ? <RecruiterDashboard /> : <AdminLogin />}
+                element={
+                  localStorage.getItem("isAdmin") === "true"
+                    ? <RecruiterDashboard />
+                    : <AdminLogin />
+                }
               />
 
               {/* Recruiter and user-specific protected routes */}
