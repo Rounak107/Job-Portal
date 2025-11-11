@@ -27,6 +27,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { useParams } from 'react-router-dom';
+import { adminApi } from '../utils/adminApi';
 
 // Styled components with animations
 const pulse = keyframes`
@@ -221,10 +222,10 @@ useEffect(() => {
         
         // If an ID is provided in params, fetch that specific recruiter's data
         if (id) {
-          res = await api.get(`/admin/recruiters/${id}`);
+          res = await adminApi.get(`/admin/recruiters/${id}`);
         } else {
           // Otherwise fetch the current user's data
-          res = await api.get('/recruiter/me');
+          res = await adminApi.get('/recruiter/me');
         }
         
         if (cancelled) return;

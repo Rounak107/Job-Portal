@@ -59,6 +59,7 @@ import { styled, keyframes } from '@mui/material/styles';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { api } from '../api';
+import { adminApi } from '../utils/adminApi';
 
 // New Animations
 const floatElevate = keyframes`
@@ -507,7 +508,7 @@ export default function ProfilePage() {
     (async () => {
       try {
         setLoading(true);
-        const res = await api.get(endpoint);
+        const res = await adminApi.get(endpoint);
         const prof: Profile | null = res.data?.profile ?? null;
 
         let parsedEdu: EduState = initialEdu;
