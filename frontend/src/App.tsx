@@ -54,7 +54,7 @@ export default function App() {
 <Route path="/admin/applicants" element={<AdminAuthWrapper />} />
 <Route path="/admin/jobs" element={<AdminAuthWrapper />} />
 <Route path="/admin/applications" element={<AdminAuthWrapper />} />
-<Route path="/admin/recruiters/:id" element={<AdminAuthWrapper />} />
+{/* <Route path="/admin/recruiters/:id" element={<AdminAuthWrapper />} /> */}
 
               {/* Recruiter and user-specific protected routes */}
               <Route

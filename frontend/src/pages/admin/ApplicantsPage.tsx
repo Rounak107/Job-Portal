@@ -57,7 +57,7 @@ export default function ApplicantsPage() {
 
   // Function to handle view profile redirect
   const handleViewProfile = (applicantId: number) => {
-     window.location.href = `/admin/applicants/${applicantId}`;
+     window.open(`/profile/${applicantId}`, '_blank');
   };
 
   // Function to handle applications redirect

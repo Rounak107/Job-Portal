@@ -198,12 +198,12 @@ export default function RecruitersPage() {
                       </td>
 
                       <td className="px-6 py-4">
-  <Link 
-    to={`/admin/recruiters/${r.id}`}
+  <button
+    onClick={() => window.open(`/recruiter/${r.id}`, '_blank')}
     className="text-blue-600 font-medium hover:underline"
   >
     View Details
-  </Link>
+  </button>
 </td>
                     </tr>
                   );

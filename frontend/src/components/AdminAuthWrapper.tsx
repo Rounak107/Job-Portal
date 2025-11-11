@@ -5,9 +5,6 @@ import RecruitersPage from '../pages/admin/RecruitersPage';
 import ApplicantsPage from '../pages/admin/ApplicantsPage';
 import Jobs from '../pages/admin/Jobs';
 import ApplicationsPage from '../pages/admin/ApplicationsPage';
-import RecruiterDetailsPage from '../pages/admin/RecruiterDetailsPage';
-import ApplicantDetailsPage from '../pages/admin/ApplicantDetailsPage';
-import ApplicationDetailsPage from '../pages/admin/ApplicationDetailsPage';
 import { useLocation } from 'react-router-dom';
 import { setAuthToken } from '../api';
 
@@ -46,25 +43,10 @@ export default function AdminAuthWrapper() {
     return <AdminLogin />;
   }
 
-  // ✅ FIXED: Handle all dynamic routes
+  // ✅ SIMPLIFIED: Only handle main admin pages, redirect details to actual pages
   const path = location.pathname;
 
-  // Recruiter details
-  if (path.startsWith('/admin/recruiters/')) {
-    return <RecruiterDetailsPage />;
-  }
-
-  // Applicant details
-  if (path.startsWith('/admin/applicants/')) {
-    return <ApplicantDetailsPage />;
-  }
-
-  // Application details
-  if (path.startsWith('/admin/applications/')) {
-    return <ApplicationDetailsPage />;
-  }
-
-  // Static routes
+  // Static routes only
   if (path === '/admin/recruiters') {
     return <RecruitersPage />;
   }
