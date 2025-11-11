@@ -57,7 +57,7 @@ export default function ApplicantsPage() {
 
   // Function to handle view profile redirect
   const handleViewProfile = (applicantId: number) => {
-    window.open(`https://www.jobrun.in/profile/${applicantId}`, '_blank');
+     window.location.href = `/admin/applicants/${applicantId}`;
   };
 
   // Function to handle applications redirect

@@ -5,8 +5,11 @@ import RecruitersPage from '../pages/admin/RecruitersPage';
 import ApplicantsPage from '../pages/admin/ApplicantsPage';
 import Jobs from '../pages/admin/Jobs';
 import ApplicationsPage from '../pages/admin/ApplicationsPage';
+import RecruiterDetailsPage from '../pages/admin/RecruiterDetailsPage';
+import ApplicantDetailsPage from '../pages/admin/ApplicantDetailsPage';
+import ApplicationDetailsPage from '../pages/admin/ApplicationDetailsPage';
 import { useLocation } from 'react-router-dom';
-import { setAuthToken } from '../api'; // ✅ Import setAuthToken
+import { setAuthToken } from '../api';
 
 export default function AdminAuthWrapper() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -18,7 +21,6 @@ export default function AdminAuthWrapper() {
       const adminStatus = localStorage.getItem("isAdmin") === "true";
       setIsAdmin(adminStatus);
       
-      // ✅ Set token for ALL admin routes
       if (adminStatus) {
         localStorage.setItem("jobportal_token", "dummy-admin");
         setAuthToken("dummy-admin");
@@ -28,7 +30,6 @@ export default function AdminAuthWrapper() {
     };
 
     checkAdminStatus();
-
     const interval = setInterval(checkAdminStatus, 1000);
     return () => clearInterval(interval);
   }, []);
@@ -45,18 +46,45 @@ export default function AdminAuthWrapper() {
     return <AdminLogin />;
   }
 
-  // Render the correct admin component based on route
-  switch (location.pathname) {
-    case '/admin/recruiters':
-      return <RecruitersPage />;
-    case '/admin/applicants':
-      return <ApplicantsPage />;
-    case '/admin/jobs':
-      return <Jobs />;
-    case '/admin/applications':
-      return <ApplicationsPage />;
-    case '/admin':
-    default:
-      return <AdminDashboard />;
+  // ✅ FIXED: Handle all dynamic routes
+  const path = location.pathname;
+
+  // Recruiter details
+  if (path.startsWith('/admin/recruiters/')) {
+    return <RecruiterDetailsPage />;
   }
+
+  // Applicant details
+  if (path.startsWith('/admin/applicants/')) {
+    return <ApplicantDetailsPage />;
+  }
+
+  // Application details
+  if (path.startsWith('/admin/applications/')) {
+    return <ApplicationDetailsPage />;
+  }
+
+  // Static routes
+  if (path === '/admin/recruiters') {
+    return <RecruitersPage />;
+  }
+
+  if (path === '/admin/applicants') {
+    return <ApplicantsPage />;
+  }
+
+  if (path === '/admin/jobs') {
+    return <Jobs />;
+  }
+
+  if (path === '/admin/applications') {
+    return <ApplicationsPage />;
+  }
+
+  if (path === '/admin') {
+    return <AdminDashboard />;
+  }
+
+  // Fallback for any other admin routes
+  return <AdminDashboard />;
 }

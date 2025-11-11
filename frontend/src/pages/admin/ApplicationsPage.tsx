@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
+import { Link } from "react-router-dom"; 
 
 type Application = {
   id: number;
@@ -20,8 +21,13 @@ export default function ApplicationsPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
+     const adminEmail = localStorage.getItem("adminEmail");
     api
-      .get<Application[]>("/admin/applications")
+      .get<Application[]>("/admin/applications", {
+      headers: {
+        'x-admin-email': adminEmail // ✅ Add this header
+      }
+    })
       .then((res) => {
         setApps(res.data);
         setFilteredApps(res.data);
@@ -302,6 +308,15 @@ export default function ApplicationsPage() {
                       </div>
                     </div>
                   </div>
+
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+  <Link 
+    to={`/admin/applications/${app.id}`}
+    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+  >
+    View Details →
+  </Link>
+</div>
 
                   {/* Footer */}
                   <div className="flex items-center justify-between">
