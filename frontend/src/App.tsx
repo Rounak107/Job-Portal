@@ -92,21 +92,21 @@ export default function App() {
 
               {/* Profiles */}
               <Route
-                path="/profile"
-                element={
-                  <PrivateRoute roles={["USER"]}>
-                    <Profile />
-                  </PrivateRoute>
-                }
-              />
-              <Route
-                path="/profile/:userId"
-                element={
-                  <PrivateRoute roles={["RECRUITER", "ADMIN"]}>
-                    <Profile />
-                  </PrivateRoute>
-                }
-              />
+  path="/profile"
+  element={
+    <PrivateRoute roles={["USER", "ADMIN"]}>  {/* ✅ Add ADMIN */}
+      <Profile />
+    </PrivateRoute>
+  }
+/>
+<Route
+  path="/profile/:userId"
+  element={
+    <PrivateRoute roles={["RECRUITER", "ADMIN"]}>  {/* ✅ This should already work */}
+      <Profile />
+    </PrivateRoute>
+  }
+/>
             </Routes>
           </main>
         </BrowserRouter>

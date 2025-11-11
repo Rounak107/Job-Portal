@@ -57,8 +57,10 @@ export default function ApplicantsPage() {
 
   // Function to handle view profile redirect
   const handleViewProfile = (applicantId: number) => {
-     window.location.href = `/profile/${applicantId}`;
-  };
+  console.log("Redirecting to profile:", applicantId);
+  console.log("Current user role:", localStorage.getItem("userRole"));
+  window.location.href = `/profile/${applicantId}`;
+};
 
   // Function to handle applications redirect
   const handleViewApplications = () => {

@@ -13,6 +13,11 @@ export default function PrivateRoute({ children, roles }: { children: JSX.Elemen
     return <Navigate to="/login" replace />;
   }
 
+// ✅ FIX: Allow ADMIN to access all routes regardless of roles restriction
+  if (user.role === 'ADMIN') {
+    return children;
+  }
+
   if (roles && !roles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }

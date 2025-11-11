@@ -30,6 +30,12 @@ export default function RecruitersPage() {
       .finally(() => setLoading(false));
   }, []);
 
+const handleViewRecruiter = (recruiterId: number) => {
+  console.log("Redirecting to recruiter:", recruiterId);
+  console.log("Current user role:", localStorage.getItem("userRole"));
+  window.location.href = `/recruiter/${recruiterId}`;
+};
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
