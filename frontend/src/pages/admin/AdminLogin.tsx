@@ -18,9 +18,17 @@ export default function AdminLogin() {
     localStorage.setItem("isAdmin", "true");
     localStorage.setItem("adminEmail", email);
     
+    // ✅ Also store admin user info
+    const adminUser = {
+      id: 9999,
+      email: email,
+      name: "Admin User", 
+      role: "ADMIN"
+    };
+    localStorage.setItem("jobportal_user", JSON.stringify(adminUser));
+    
     setAuthToken("dummy-admin");
     
-    // ✅ Force refresh to trigger route change
     window.location.href = "/admin";
   } else {
     setError("Access denied. Invalid email or password.");

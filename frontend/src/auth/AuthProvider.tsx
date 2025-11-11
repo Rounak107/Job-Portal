@@ -1,4 +1,3 @@
-// frontend/src/auth/AuthProvider.tsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { api, setAuthToken } from '../api';
 
@@ -40,10 +39,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     async function rehydrate() {
       const storedToken = localStorage.getItem(TOKEN_KEY);
       if (storedToken === "dummy-admin") {
-      console.log("Admin token detected, skipping auth rehydration");
-      setLoading(false);
-      return;
-    }
+        console.log("Admin token detected, creating admin user object");
+        
+        // ✅ FIX: Create admin user object
+        const adminEmail = localStorage.getItem("adminEmail") || "admin@jobrun.in";
+        const adminUser: User = {
+          id: 9999, // Admin ID
+          email: adminEmail,
+          name: "Admin User",
+          role: "ADMIN"
+        };
+        
+        setUser(adminUser);
+        setToken(storedToken);
+        setLoading(false);
+        return;
+      }
+      
       try {
         setAuthToken(storedToken);
         const res = await api.get('/users/me');
