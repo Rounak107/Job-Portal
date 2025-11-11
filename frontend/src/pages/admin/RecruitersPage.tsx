@@ -199,7 +199,7 @@ export default function RecruitersPage() {
 
                       <td className="px-6 py-4">
   <button
-    onClick={() => window.open(`/recruiter/${r.id}`, '_blank')}
+    onClick={() => window.location.href = `/recruiter/${r.id}`}
     className="text-blue-600 font-medium hover:underline"
   >
     View Details
