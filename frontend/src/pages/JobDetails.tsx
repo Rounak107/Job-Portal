@@ -292,15 +292,18 @@ export default function JobDetail() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                <Typography 
-                  variant="h3" 
-                  fontWeight={800} 
-                  sx={{ 
+                <Typography
+                  variant="h3"
+                  fontWeight={800}
+                  sx={{
                     background: 'linear-gradient(45deg, #1976d2 30%, #9c27b0 90%)',
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    mb: 2
+                    mb: 2,
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
+                    fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3rem' }
                   }}
                 >
                   {job.title}
@@ -315,22 +318,30 @@ export default function JobDetail() {
                 <Stack direction="row" spacing={2} mt={2} alignItems="center" flexWrap="wrap" gap={1}>
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <BusinessIcon color="primary" />
-                    <Typography variant="h6" fontWeight={700} color="primary">
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                      color="primary"
+                      sx={{
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word'
+                      }}
+                    >
                       {job.company}
                     </Typography>
                   </Stack>
-                  <AnimatedChip 
-                    icon={<LocationOnIcon />} 
-                    label={job.location} 
-                    color="primary" 
-                    variant="outlined" 
+                  <AnimatedChip
+                    icon={<LocationOnIcon />}
+                    label={job.location}
+                    color="primary"
+                    variant="outlined"
                   />
                   {job.role && (
-                    <AnimatedChip 
-                      icon={<WorkIcon />} 
-                      label={job.role} 
-                      color="secondary" 
-                      variant="outlined" 
+                    <AnimatedChip
+                      icon={<WorkIcon />}
+                      label={job.role}
+                      color="secondary"
+                      variant="outlined"
                     />
                   )}
                 </Stack>
@@ -344,30 +355,38 @@ export default function JobDetail() {
                 <Stack direction="row" spacing={2} alignItems="center" mt={3} flexWrap="wrap" gap={1}>
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <AttachMoneyIcon color="success" />
-                    <Typography variant="h6" fontWeight={600} color="success.main">
+                    <Typography
+                      variant="h6"
+                      fontWeight={600}
+                      color="success.main"
+                      sx={{
+                        wordBreak: 'break-word',
+                        fontSize: { xs: '1rem', sm: '1.25rem' }
+                      }}
+                    >
                       {formatCurrency(job.salaryMin)}{job.salaryMax ? ` - ${formatCurrency(job.salaryMax)}` : ""}
                     </Typography>
                   </Stack>
                   {job.workMode && (
-                    <AnimatedChip 
-                      label={job.workMode} 
-                      color="success" 
+                    <AnimatedChip
+                      label={job.workMode}
+                      color="success"
                       variant="filled"
                       sx={{ fontWeight: 600 }}
                     />
                   )}
                 </Stack>
                 {job.incentive && (
-  <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-    🎁 Incentive: {job.incentive}
-  </Typography>
-)}
+                  <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+                    🎁 Incentive: {job.incentive}
+                  </Typography>
+                )}
 
-{job.workTime && (
-  <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-    ⏰ Working Time: {job.workTime}
-  </Typography>
-)}
+                {job.workTime && (
+                  <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+                    ⏰ Working Time: {job.workTime}
+                  </Typography>
+                )}
 
               </motion.div>
 
@@ -384,10 +403,10 @@ export default function JobDetail() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
               >
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    whiteSpace: "pre-wrap", 
+                <Typography
+                  variant="body1"
+                  sx={{
+                    whiteSpace: "pre-wrap",
                     lineHeight: 1.8,
                     fontSize: '1.1rem'
                   }}
@@ -401,10 +420,10 @@ export default function JobDetail() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.7 }}
               >
-                <Box 
-                  mt={4} 
-                  p={3} 
-                  sx={{ 
+                <Box
+                  mt={4}
+                  p={3}
+                  sx={{
                     background: alpha('#1976d2', 0.05),
                     borderRadius: 2,
                     border: `1px solid ${alpha('#1976d2', 0.1)}`
@@ -450,9 +469,9 @@ export default function JobDetail() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Box 
-                          sx={{ 
-                            textAlign: 'center', 
+                        <Box
+                          sx={{
+                            textAlign: 'center',
                             p: 3,
                             background: alpha('#2196f3', 0.05),
                             borderRadius: 2,
@@ -481,9 +500,9 @@ export default function JobDetail() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Box 
-                          sx={{ 
-                            textAlign: 'center', 
+                        <Box
+                          sx={{
+                            textAlign: 'center',
                             p: 3,
                             background: alpha('#f44336', 0.05),
                             borderRadius: 2,
@@ -502,9 +521,9 @@ export default function JobDetail() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Box 
-                          sx={{ 
-                            textAlign: 'center', 
+                        <Box
+                          sx={{
+                            textAlign: 'center',
                             p: 3,
                             background: alpha('#4caf50', 0.05),
                             borderRadius: 2,
@@ -586,12 +605,12 @@ export default function JobDetail() {
                               onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
                             />
                             <label htmlFor="resume-file-input">
-                              <Button 
-                                variant="outlined" 
-                                component="span" 
+                              <Button
+                                variant="outlined"
+                                component="span"
                                 startIcon={<UploadFileIcon />}
                                 fullWidth
-                                sx={{ 
+                                sx={{
                                   borderRadius: 2,
                                   borderStyle: 'dashed',
                                   borderWidth: 2,
@@ -627,14 +646,14 @@ export default function JobDetail() {
           </motion.div>
         </Stack>
 
-        <Snackbar 
-          open={toast.open} 
-          autoHideDuration={4000} 
+        <Snackbar
+          open={toast.open}
+          autoHideDuration={4000}
           onClose={() => setToast(s => ({ ...s, open: false }))}
           TransitionComponent={Slide}
         >
-          <Alert 
-            severity={toast.severity || "info"} 
+          <Alert
+            severity={toast.severity || "info"}
             onClose={() => setToast(s => ({ ...s, open: false }))}
             sx={{ borderRadius: 2 }}
           >
