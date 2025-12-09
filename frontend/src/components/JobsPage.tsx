@@ -63,6 +63,7 @@ import CategoryIcon from '@mui/icons-material/Category';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { TransitionProps } from '@mui/material/transitions';
 import { keyframes } from '@mui/system';
+import AdBanner from './AdBanner';
 
 type Job = {
   id: number;
@@ -77,7 +78,7 @@ type Job = {
   postedBy?: { id: number; name: string; email: string };
   createdAt?: string | null;
   postedAt?: string | null;
-    incentive?: string | null;   // 👈 add
+  incentive?: string | null;   // 👈 add
   workTime?: string | null;    // 👈 add
 };
 
@@ -142,14 +143,14 @@ function timeAgo(dateString: string) {
 }
 
 // New component for salary filter
-const SalaryFilterContent = ({ 
-  initialMin, 
-  initialMax, 
-  onApply 
-}: { 
-  initialMin: string; 
-  initialMax: string; 
-  onApply: (min: string, max: string) => void; 
+const SalaryFilterContent = ({
+  initialMin,
+  initialMax,
+  onApply
+}: {
+  initialMin: string;
+  initialMax: string;
+  onApply: (min: string, max: string) => void;
 }) => {
   const [min, setMin] = useState(initialMin);
   const [max, setMax] = useState(initialMax);
@@ -160,7 +161,7 @@ const SalaryFilterContent = ({
   };
 
   return (
-    <Stack 
+    <Stack
       component="form"
       spacing={3}
       onSubmit={handleSubmit}
@@ -246,7 +247,7 @@ export default function JobsPage() {
       updated = [...savedJobs, jobId];
     }
     setSavedJobs(updated);
-    
+
     // Persist to localStorage
     try {
       localStorage.setItem('savedJobs', JSON.stringify(updated));
@@ -351,7 +352,7 @@ export default function JobsPage() {
   const activeFiltersCount = [company, location, role, workMode, minSalary, maxSalary].filter(Boolean).length;
 
   const JobSkeleton = () => (
-    <Card sx={{ 
+    <Card sx={{
       mb: 3,
       borderRadius: 4,
       overflow: 'hidden',
@@ -468,7 +469,7 @@ export default function JobsPage() {
           );
         case 'salary':
           return (
-            <SalaryFilterContent 
+            <SalaryFilterContent
               initialMin={minSalary}
               initialMax={maxSalary}
               onApply={(min, max) => {
@@ -508,7 +509,7 @@ export default function JobsPage() {
           },
         }}
       >
-        <DialogTitle sx={{ 
+        <DialogTitle sx={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: '#fff',
           display: 'flex',
@@ -730,7 +731,7 @@ export default function JobsPage() {
             <Typography variant="body2" color="text.secondary" sx={{ alignSelf: 'center', mr: 1 }}>
               Active filters:
             </Typography>
-            
+
             {company && (
               <Chip
                 label={`Company: ${company}`}
@@ -739,7 +740,7 @@ export default function JobsPage() {
                 sx={{ borderRadius: 2 }}
               />
             )}
-            
+
             {location && (
               <Chip
                 label={`Location: ${location}`}
@@ -748,7 +749,7 @@ export default function JobsPage() {
                 sx={{ borderRadius: 2 }}
               />
             )}
-            
+
             {role && (
               <Chip
                 label={`Role: ${role}`}
@@ -757,7 +758,7 @@ export default function JobsPage() {
                 sx={{ borderRadius: 2 }}
               />
             )}
-            
+
             {workMode && (
               <Chip
                 label={`Mode: ${WORK_MODE_LABEL[workMode] || workMode}`}
@@ -766,7 +767,7 @@ export default function JobsPage() {
                 sx={{ borderRadius: 2 }}
               />
             )}
-            
+
             {minSalary && (
               <Chip
                 label={`Min: ₹${Number(minSalary).toLocaleString()}`}
@@ -775,7 +776,7 @@ export default function JobsPage() {
                 sx={{ borderRadius: 2 }}
               />
             )}
-            
+
             {maxSalary && (
               <Chip
                 label={`Max: ₹${Number(maxSalary).toLocaleString()}`}
@@ -836,12 +837,12 @@ export default function JobsPage() {
           background: 'rgba(255,255,255,0.1)',
           animation: `${float} 8s ease-in-out infinite`,
         }} />
-        
+
         <Container maxWidth="lg">
           <Fade in timeout={1000}>
             <Stack spacing={3} alignItems="center" position="relative">
-              <Typography 
-                variant={isMobile ? "h3" : "h2"} 
+              <Typography
+                variant={isMobile ? "h3" : "h2"}
                 sx={{
                   fontWeight: 900,
                   color: '#fff',
@@ -851,8 +852,8 @@ export default function JobsPage() {
               >
                 Find Your Dream Job
               </Typography>
-              <Typography 
-                variant={isMobile ? "body1" : "h6"} 
+              <Typography
+                variant={isMobile ? "body1" : "h6"}
                 sx={{
                   color: 'rgba(255,255,255,0.9)',
                   textAlign: 'center',
@@ -871,10 +872,10 @@ export default function JobsPage() {
                 background: 'rgba(255,255,255,0.95)',
                 boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
               }}>
-                <Stack 
+                <Stack
                   component="form"
-                  direction="row" 
-                  spacing={1} 
+                  direction="row"
+                  spacing={1}
                   alignItems="center"
                   onSubmit={(e) => {
                     e.preventDefault();
@@ -956,7 +957,9 @@ export default function JobsPage() {
           </Fade>
         </Container>
       </Box>
-    
+
+      <AdBanner />
+
       <Container maxWidth="xl" sx={{ px: { xs: 2, md: 3 } }}>
         {/* Horizontal Filters - Hidden on Mobile */}
         {!isMobile && (
@@ -1150,9 +1153,9 @@ export default function JobsPage() {
                                 {job.title}
                               </Typography>
 
-                              <Stack 
-                                direction={{ xs: 'column', sm: 'row' }} 
-                                spacing={{ xs: 1, sm: 3 }} 
+                              <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                spacing={{ xs: 1, sm: 3 }}
                                 alignItems={{ xs: 'flex-start', sm: 'center' }}
                                 flexWrap="wrap"
                               >
@@ -1198,10 +1201,10 @@ export default function JobsPage() {
                           </Stack>
 
                           {/* Tags */}
-                          <Stack 
-                            direction="row" 
-                            spacing={1} 
-                            alignItems="center" 
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
                             flexWrap="wrap"
                             sx={{ gap: 1 }}
                           >
@@ -1233,37 +1236,37 @@ export default function JobsPage() {
                                 },
                               }}
                             />
-                             {job.incentive && (
-    <Chip
-      icon={<TrendingUpIcon />}
-      label={`Incentive: ${job.incentive}`}
-      size="small"
-      sx={{
-        borderRadius: 3,
-        background: (theme) => alpha(theme.palette.warning.main, 0.1),
-        border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
-        '& .MuiChip-icon': {
-          color: (theme) => theme.palette.warning.main,
-        },
-      }}
-    />
-  )}
+                            {job.incentive && (
+                              <Chip
+                                icon={<TrendingUpIcon />}
+                                label={`Incentive: ${job.incentive}`}
+                                size="small"
+                                sx={{
+                                  borderRadius: 3,
+                                  background: (theme) => alpha(theme.palette.warning.main, 0.1),
+                                  border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
+                                  '& .MuiChip-icon': {
+                                    color: (theme) => theme.palette.warning.main,
+                                  },
+                                }}
+                              />
+                            )}
 
-  {job.workTime && (
-    <Chip
-      icon={<AccessTimeIcon />}
-      label={`Work Time: ${job.workTime}`}
-      size="small"
-      sx={{
-        borderRadius: 3,
-        background: (theme) => alpha(theme.palette.info.main, 0.1),
-        border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
-        '& .MuiChip-icon': {
-          color: (theme) => theme.palette.info.main,
-        },
-      }}
-    />
-  )}
+                            {job.workTime && (
+                              <Chip
+                                icon={<AccessTimeIcon />}
+                                label={`Work Time: ${job.workTime}`}
+                                size="small"
+                                sx={{
+                                  borderRadius: 3,
+                                  background: (theme) => alpha(theme.palette.info.main, 0.1),
+                                  border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+                                  '& .MuiChip-icon': {
+                                    color: (theme) => theme.palette.info.main,
+                                  },
+                                }}
+                              />
+                            )}
                             <Chip
                               icon={<AccessTimeIcon />}
                               label={postedDate ? timeAgo(postedDate) : '—'}
@@ -1393,9 +1396,9 @@ export default function JobsPage() {
             <BottomNavigationAction
               label="Company"
               icon={
-                <Badge 
-                  variant="dot" 
-                  color="primary" 
+                <Badge
+                  variant="dot"
+                  color="primary"
                   invisible={!company}
                 >
                   <BusinessIcon />
@@ -1406,9 +1409,9 @@ export default function JobsPage() {
             <BottomNavigationAction
               label="Location"
               icon={
-                <Badge 
-                  variant="dot" 
-                  color="primary" 
+                <Badge
+                  variant="dot"
+                  color="primary"
                   invisible={!location}
                 >
                   <LocationOnIcon />
@@ -1419,9 +1422,9 @@ export default function JobsPage() {
             <BottomNavigationAction
               label="Role"
               icon={
-                <Badge 
-                  variant="dot" 
-                  color="primary" 
+                <Badge
+                  variant="dot"
+                  color="primary"
                   invisible={!role}
                 >
                   <WorkIcon />
@@ -1432,9 +1435,9 @@ export default function JobsPage() {
             <BottomNavigationAction
               label="Mode"
               icon={
-                <Badge 
-                  variant="dot" 
-                  color="primary" 
+                <Badge
+                  variant="dot"
+                  color="primary"
                   invisible={!workMode}
                 >
                   <CategoryIcon />
@@ -1445,9 +1448,9 @@ export default function JobsPage() {
             <BottomNavigationAction
               label="Salary"
               icon={
-                <Badge 
-                  variant="dot" 
-                  color="primary" 
+                <Badge
+                  variant="dot"
+                  color="primary"
                   invisible={!minSalary && !maxSalary}
                 >
                   <CurrencyRupeeIcon />
