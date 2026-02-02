@@ -1,6 +1,14 @@
 // backend/src/routes/jobRoutes.ts
 import express from 'express';
-import { createJob, getAllJobs, getJobById, getJobFilters, getMyJobs } from '../controllers/jobController';
+import {
+    createJob,
+    getAllJobs,
+    getJobById,
+    getJobFilters,
+    getMyJobs,
+    updateJob,
+    deleteJob
+} from '../controllers/jobController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { roleMiddleware } from '../middleware/roleMiddleware';
 import { Role } from '@prisma/client';
@@ -12,6 +20,12 @@ router.post('/', authMiddleware, roleMiddleware([Role.RECRUITER, Role.ADMIN]), c
 
 // recruiter-only: list my jobs with counts
 router.get('/my', authMiddleware, roleMiddleware([Role.RECRUITER, Role.ADMIN]), getMyJobs);
+
+// update job
+router.patch('/:id', authMiddleware, roleMiddleware([Role.RECRUITER, Role.ADMIN]), updateJob);
+
+// delete job
+router.delete('/:id', authMiddleware, roleMiddleware([Role.RECRUITER, Role.ADMIN]), deleteJob);
 
 // filter metadata (public)
 router.get('/filters', getJobFilters);

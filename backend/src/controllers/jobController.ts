@@ -311,3 +311,95 @@ export const getMyJobs = async (req: Request, res: Response) => {
     return res.status(500).json({ message: 'Failed to fetch recruiter jobs', error: err.message });
   }
 };
+
+/**
+ * Update Job
+ */
+export const updateJob = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const currentUser = (req as any).user;
+    if (!currentUser) return res.status(401).json({ message: "Unauthorized" });
+
+    const job = await prisma.job.findUnique({ where: { id } });
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    // Only owner or admin can update
+    if (job.postedById !== currentUser.id && currentUser.role !== Role.ADMIN) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    const {
+      title,
+      company,
+      location,
+      description,
+      salaryMin,
+      salaryMax,
+      workMode,
+      role,
+      incentive,
+      workTime,
+    } = req.body;
+
+    const min = parseOptionalNumber(salaryMin);
+    const max = parseOptionalNumber(salaryMax);
+
+    if (min !== null && max !== null && min > max) {
+      return res.status(400).json({ message: "salaryMin cannot be greater than salaryMax" });
+    }
+
+    const updatedJob = await prisma.job.update({
+      where: { id },
+      data: {
+        title: title !== undefined ? String(title).trim() : undefined,
+        company: company !== undefined ? String(company).trim() : undefined,
+        location: location !== undefined ? String(location).trim() : undefined,
+        description: description !== undefined ? String(description) : undefined,
+        salaryMin: min !== undefined ? min : undefined,
+        salaryMax: max !== undefined ? max : undefined,
+        workMode: workMode ?? undefined,
+        role: role ?? undefined,
+        incentive: incentive !== undefined ? String(incentive).trim() : undefined,
+        workTime: workTime !== undefined ? String(workTime).trim() : undefined,
+      },
+    });
+
+    return res.json({ message: "Job updated successfully", job: updatedJob });
+  } catch (err: any) {
+    console.error("updateJob error:", err);
+    return res.status(500).json({ message: "Error updating job", error: err.message });
+  }
+};
+
+/**
+ * Delete Job
+ */
+export const deleteJob = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const currentUser = (req as any).user;
+    if (!currentUser) return res.status(401).json({ message: "Unauthorized" });
+
+    const job = await prisma.job.findUnique({ where: { id } });
+    if (!job) return res.status(404).json({ message: "Job not found" });
+
+    // Only owner or admin can delete
+    if (job.postedById !== currentUser.id && currentUser.role !== Role.ADMIN) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    // Use transaction to delete dependencies if needed (Prisma onDelete: Cascade handles jobViews)
+    // Applications also need to be handled or the FK will break
+    await prisma.$transaction([
+      prisma.applicationAudit.deleteMany({ where: { application: { jobId: id } } }),
+      prisma.application.deleteMany({ where: { jobId: id } }),
+      prisma.job.delete({ where: { id } }),
+    ]);
+
+    return res.json({ message: "Job deleted successfully" });
+  } catch (err: any) {
+    console.error("deleteJob error:", err);
+    return res.status(500).json({ message: "Error deleting job", error: err.message });
+  }
+};

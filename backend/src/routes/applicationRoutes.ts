@@ -16,6 +16,8 @@ import { Role } from '@prisma/client';
 import upload from '../middleware/uploadMiddleware';
 import path from 'path';
 import { sendApplicantEmail, sendRecruiterNewApplicationEmail } from '../services/emailService';
+import cloudinary from '../config/cloudinary';
+import fs from 'fs';
 
 const router = express.Router();
 
@@ -25,7 +27,7 @@ const router = express.Router();
 router.post('/jobs/:id/apply', authMiddleware, applyToJob);
 
 /**
- * Apply with file upload (kept for your compatibility)
+ * Apply with file upload (Cloudinary)
  */
 router.post('/jobs/:id/apply-file', authMiddleware, upload.single('resume'), async (req, res) => {
   try {
@@ -34,45 +36,46 @@ router.post('/jobs/:id/apply-file', authMiddleware, upload.single('resume'), asy
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-    //const backendBase = process.env.BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-const resumePath = `/uploads/${req.file.filename}`; // only relative path
+    // Upload to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'job_applications',
+      resource_type: 'raw',
+      public_id: `resume_job_${jobId}_user_${userId}_${Date.now()}`,
+    });
 
-// const existing = await prisma.application.findFirst({ where: { jobId, userId } });
-// if (existing) return res.status(400).json({ message: 'You already applied to this job.' });
+    // Delete local file
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
 
-// Save only the relative path
-const application = await prisma.application.create({
-  data: { resumeUrl: resumePath, userId, jobId }, // ✅ store relative path
-  include: {
-    user: { select: { id: true, name: true, email: true } },
-    job: { include: { postedBy: { select: { id: true, name: true, email: true } } } },
-  },
-});
+    const resumePath = result.secure_url;
 
-//const fullResumeUrl = `${backendBase}${resumePath}`; // ✅ build absolute URL for email
+    const application = await prisma.application.create({
+      data: { resumeUrl: resumePath, userId, jobId },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        job: { include: { postedBy: { select: { id: true, name: true, email: true } } } },
+      },
+    });
 
-(async () => {
-  try {
-    // Send email to applicant
-    if (application.user?.email && application.job?.title) {
-      sendApplicantEmail(application.user.email, application.job.title, resumePath);
-    }
-
-    // Send email to recruiter
-    const recruiterEmail = application.job?.postedBy?.email;
-    if (recruiterEmail) {
-      sendRecruiterNewApplicationEmail(
-        recruiterEmail,
-        application.job.title,
-        application.user?.name || application.user?.email || 'Applicant',
-        application.user?.email || '',
-        resumePath
-      );
-    }
-  } catch (e) {
-    console.error('background email failed', e);
-  }
-})();
+    // Background email
+    (async () => {
+      try {
+        if (application.user?.email && application.job?.title) {
+          sendApplicantEmail(application.user.email, application.job.title, resumePath);
+        }
+        const recruiterEmail = application.job?.postedBy?.email;
+        if (recruiterEmail) {
+          sendRecruiterNewApplicationEmail(
+            recruiterEmail,
+            application.job.title,
+            application.user?.name || application.user?.email || 'Applicant',
+            application.user?.email || '',
+            resumePath
+          );
+        }
+      } catch (e) {
+        console.error('background email failed', e);
+      }
+    })();
 
     res.status(201).json(application);
   } catch (err: any) {
@@ -174,8 +177,19 @@ router.get('/:id/resume', authMiddleware, async (req, res) => {
     const appId = parseInt(req.params.id, 10);
     const application = await prisma.application.findUnique({ where: { id: appId } });
     if (!application) return res.status(404).json({ message: 'Application not found' });
+
+    // If it's already a full Cloudinary URL, just redirect
+    if (application.resumeUrl.startsWith('http')) {
+      return res.redirect(application.resumeUrl);
+    }
+
+    // Fallback for old local files (though they might be gone on Render)
     const filePath = path.join(__dirname, '..', '..', 'uploads', path.basename(application.resumeUrl));
-    res.download(filePath);
+    if (fs.existsSync(filePath)) {
+      return res.download(filePath);
+    }
+
+    res.status(404).json({ message: 'Resume file not found on server' });
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ message: 'Failed to download resume', error: err.message });

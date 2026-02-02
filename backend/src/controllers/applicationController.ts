@@ -159,28 +159,28 @@ export const updateApplicationStatus = async (req: Request, res: Response) => {
       // ✅ Always send applicant mail
       if (updated.user?.email) {
         sendStatusUpdateEmail(
-  updated.user.email,
-  updated.user.name || updated.user.email || 'Applicant',
-  updated.job.title,
-  status,   // ✅ This is the new status
-  updated.job.postedBy?.email,
-  note ?? undefined
-);
+          updated.user.email,
+          updated.user.name || updated.user.email || 'Applicant',
+          updated.job.title,
+          status,   // ✅ This is the new status
+          updated.job.postedBy?.email,
+          note ?? undefined
+        );
       }
 
-      // ✅ Send recruiter mail ONLY for selected statuses (e.g. ACCEPTED)
-     if (status === 'ACCEPTED' && updated.job?.postedBy?.email) {
-  console.log('[mail] enqueue recruiterStatusUpdate for ACCEPTED ->', updated.job.postedBy.email);
-  sendRecruiterStatusUpdateEmail(
-    updated.job.postedBy.email,
-    updated.job.postedBy.name || 'Recruiter',
-    updated.job.title,
-    updated.user?.name || updated.user?.email || 'Applicant',
-    updated.user?.email || '',
-    status,
-    note ?? undefined
-  );
-}
+      // ✅ Always send recruiter mail for ANY status update
+      if (updated.job?.postedBy?.email) {
+        console.log(`[mail] enqueue recruiterStatusUpdate for ${status} ->`, updated.job.postedBy.email);
+        sendRecruiterStatusUpdateEmail(
+          updated.job.postedBy.email,
+          updated.job.postedBy.name || 'Recruiter',
+          updated.job.title,
+          updated.user?.name || updated.user?.email || 'Applicant',
+          updated.user?.email || '',
+          status,
+          note ?? undefined
+        );
+      }
     } catch (e) {
       console.error('Email sending failed (non-fatal)', e);
     }
@@ -252,43 +252,43 @@ export const batchUpdateStatus = async (req: Request, res: Response) => {
     await prisma.$transaction(txOps);
 
     // send emails (use the fetched `applications` list and the new `status`)
-const emailResults: { id: number; email: string; ok: boolean; error?: any }[] = [];
+    const emailResults: { id: number; email: string; ok: boolean; error?: any }[] = [];
 
-for (const app of applications) {
-  try {
-    // Applicant always gets status update
-    if (app.user?.email) {
-      sendStatusUpdateEmail(
-        app.user.email,
-        app.user.name || app.user.email || 'Applicant',
-        app.job.title,
-        status,
-        app.job?.postedBy?.email,
-        note ?? undefined
-      );
-      emailResults.push({ id: app.id, email: app.user.email, ok: true });
-    } else {
-      emailResults.push({ id: app.id, email: '', ok: false, error: 'No applicant email' });
-    }
+    for (const app of applications) {
+      try {
+        // Applicant always gets status update
+        if (app.user?.email) {
+          sendStatusUpdateEmail(
+            app.user.email,
+            app.user.name || app.user.email || 'Applicant',
+            app.job.title,
+            status,
+            app.job?.postedBy?.email,
+            note ?? undefined
+          );
+          emailResults.push({ id: app.id, email: app.user.email, ok: true });
+        } else {
+          emailResults.push({ id: app.id, email: '', ok: false, error: 'No applicant email' });
+        }
 
-    // Recruiter gets an email ONLY when ACCEPTED
-    if (status === 'ACCEPTED' && app.job?.postedBy?.email) {
-      console.log('[mail] enqueue recruiterStatusUpdate (batch) ->', app.job.postedBy.email);
-      sendRecruiterStatusUpdateEmail(
-        app.job.postedBy.email,
-        app.job.postedBy.name || 'Recruiter',
-        app.job.title,
-        app.user?.name || app.user?.email || 'Applicant',
-        app.user?.email || '',
-        status,
-        note ?? undefined
-      );
+        // Recruiter gets an email ONLY when ACCEPTED
+        if (status === 'ACCEPTED' && app.job?.postedBy?.email) {
+          console.log('[mail] enqueue recruiterStatusUpdate (batch) ->', app.job.postedBy.email);
+          sendRecruiterStatusUpdateEmail(
+            app.job.postedBy.email,
+            app.job.postedBy.name || 'Recruiter',
+            app.job.title,
+            app.user?.name || app.user?.email || 'Applicant',
+            app.user?.email || '',
+            status,
+            note ?? undefined
+          );
+        }
+      } catch (err: any) {
+        console.error('Failed to queue status update email for app', app.id, err);
+        emailResults.push({ id: app.id, email: app.user?.email || '', ok: false, error: err?.message || err });
+      }
     }
-  } catch (err: any) {
-    console.error('Failed to queue status update email for app', app.id, err);
-    emailResults.push({ id: app.id, email: app.user?.email || '', ok: false, error: err?.message || err });
-  }
-}
 
     return res.json({ message: 'Batch update completed', updated: applications.length, emailResults });
   } catch (err: any) {

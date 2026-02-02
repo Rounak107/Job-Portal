@@ -2,10 +2,9 @@
 import fs from "fs";
 import path from "path";
 import Handlebars from "handlebars";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 // ----------------- ENV -----------------
-const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const FROM_EMAIL = process.env.FROM_EMAIL || "JobRun <no-reply@jobrun.in>";
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || "http://localhost:5173";
 const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL || "http://localhost:5000";
@@ -18,32 +17,51 @@ function logLine(line: string) {
   const file = path.join(logsDir, "email.log");
   const ts = new Date().toISOString();
   const final = `[${ts}] ${line}\n`;
-  try { fs.appendFileSync(file, final); } catch {}
+  try { fs.appendFileSync(file, final); } catch { }
   console.log(final.trim());
 }
 
-// ----------------- RESEND ONLY -----------------
-if (!RESEND_API_KEY) logLine("❌ ERROR: RESEND_API_KEY is missing!");
+// ----------------- NODEMAILER SETUP -----------------
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.hostinger.com",
+  port: parseInt(process.env.SMTP_PORT || "465", 10),
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER || "support@jobrun.in",
+    pass: process.env.SMTP_PASS || "Rahul@338",
+  },
+});
 
-const resend = new Resend(RESEND_API_KEY);
-logLine(`✅ Resend Ready (from=${FROM_EMAIL})`);
+transporter.verify((error, success) => {
+  if (error) {
+    logLine(`❌ SMTP ERROR: ${error.message}`);
+  } else {
+    logLine("✅ SMTP Transporter Ready");
+  }
+});
 
 // ----------------- LOAD TEMPLATES -----------------
-const templatesDir = path.join(__dirname, "..", "emails", "templates");
+const templatesDir = path.join(process.cwd(), "emails", "templates");
 const templates: Record<string, Handlebars.TemplateDelegate> = {};
 
 logLine(`EMAIL BASES -> BACKEND_BASE_URL=${BACKEND_BASE_URL} FRONTEND_BASE_URL=${FRONTEND_BASE_URL}`);
 
 function loadTemplates() {
-  if (!fs.existsSync(templatesDir)) {
-    logLine(`❌ Templates directory not found: ${templatesDir}`);
+  const finalDir = fs.existsSync(templatesDir)
+    ? templatesDir
+    : path.join(__dirname, "..", "emails", "templates"); // Fallback for various build structures
+
+  if (!fs.existsSync(finalDir)) {
+    logLine(`❌ Templates directory not found: ${finalDir}`);
     return;
   }
 
-  for (const file of fs.readdirSync(templatesDir)) {
+  logLine(`📂 Loading templates from: ${finalDir}`);
+
+  for (const file of fs.readdirSync(finalDir)) {
     if (file.endsWith(".hbs")) {
       const name = path.basename(file, ".hbs");
-      const content = fs.readFileSync(path.join(templatesDir, file), "utf8");
+      const content = fs.readFileSync(path.join(finalDir, file), "utf8");
       templates[name] = Handlebars.compile(content);
       logLine(`✅ Loaded template "${name}"`);
     }
@@ -52,25 +70,28 @@ function loadTemplates() {
 loadTemplates();
 
 // ----------------- SEND EMAIL -----------------
-async function sendEmailTemplate(to: string, subject: string, template: string, context: any) {
-  let html = templates[template]
-    ? templates[template](context)
+async function sendEmailTemplate(to: string, subject: string, templateName: string, context: any) {
+  const template = templates[templateName] || templates[templateName.toLowerCase()];
+
+  let html = template
+    ? template(context)
     : `<h3>${subject}</h3><pre>${JSON.stringify(context, null, 2)}</pre>`;
 
-  const { data, error } = await resend.emails.send({
+  const mailOptions = {
     from: FROM_EMAIL,
     to,
     subject,
     html,
-  });
+  };
 
-  if (error) {
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    logLine(`✅ SENT to=${to} subject="${subject}" id=${info.messageId}`);
+    return info;
+  } catch (error: any) {
     logLine(`❌ SEND ERROR: ${error.message}`);
-    throw new Error(error.message);
+    throw error;
   }
-
-  logLine(`✅ SENT to=${to} subject="${subject}" id=${data?.id}`);
-  return data;
 }
 
 // ----------------- QUEUE SYSTEM -----------------
@@ -153,7 +174,9 @@ export function sendWelcomeEmail(to: string, name?: string) {
 }
 
 export function sendApplicantEmail(to: string, jobTitle: string, resumeUrl?: string) {
-  const fullUrl = resumeUrl ? BACKEND_BASE_URL + resumeUrl : null;
+  const fullUrl = resumeUrl
+    ? (resumeUrl.startsWith('http') ? resumeUrl : BACKEND_BASE_URL + resumeUrl)
+    : null;
 
   return enqueueEmail({
     to,
@@ -173,7 +196,9 @@ export function sendPasswordResetEmail(to: string, name: string, resetUrl: strin
 }
 
 export function sendRecruiterNewApplicationEmail(to: string, jobTitle: string, applicantName: string, applicantEmail: string, resumeUrl?: string) {
-  const fullUrl = resumeUrl ? BACKEND_BASE_URL + resumeUrl : null;
+  const fullUrl = resumeUrl
+    ? (resumeUrl.startsWith('http') ? resumeUrl : BACKEND_BASE_URL + resumeUrl)
+    : null;
 
   return enqueueEmail({
     to,

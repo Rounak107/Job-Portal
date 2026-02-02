@@ -3,7 +3,10 @@ import { Request, Response } from 'express';
 import prisma from '../prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { sendWelcomeEmail,  sendPasswordResetEmail } from '../services/emailService';
+import { sendWelcomeEmail, sendPasswordResetEmail } from '../services/emailService';
+import cloudinary from '../config/cloudinary';
+import { v2 as cloudinaryV2 } from 'cloudinary';
+import fs from 'fs';
 
 
 const JWT_SECRET = process.env.JWT_SECRET!;
@@ -40,7 +43,7 @@ export const registerUser = async (req: Request, res: Response) => {
     });
 
     // fire-and-forget (doesn't block response)
-    try { sendWelcomeEmail(user.email, user.name); } catch (e) {}
+    try { sendWelcomeEmail(user.email, user.name); } catch (e) { }
 
     res.status(201).json({ message: 'User registered successfully', user });
   } catch (error: any) {
@@ -346,10 +349,20 @@ export const uploadMyAvatar = async (req: Request, res: Response) => {
     if (!me) return res.status(401).json({ message: 'Unauthorized' });
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-    const relPath = `/uploads/${req.file.filename}`;
+    // Upload to Cloudinary
+    console.log(`[Cloudinary] Uploading avatar for user ${me.id}...`);
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'profile_pics',
+      public_id: `user_${me.id}_${Date.now()}`,
+    });
+    console.log(`[Cloudinary] Avatar upload success: ${result.secure_url}`);
+
+    // Delete local file after upload
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
     const updated = await prisma.user.update({
       where: { id: me.id },
-      data: { profilePic: relPath },
+      data: { profilePic: result.secure_url },
       select: { id: true, profilePic: true },
     });
 
@@ -367,10 +380,21 @@ export const uploadMyResume = async (req: Request, res: Response) => {
     if (!me) return res.status(401).json({ message: 'Unauthorized' });
     if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
-    const relPath = `/uploads/${req.file.filename}`;
+    // Upload to Cloudinary (as raw/document)
+    console.log(`[Cloudinary] Uploading resume for user ${me.id}...`);
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'resumes',
+      resource_type: 'raw',
+      public_id: `resume_user_${me.id}_${Date.now()}`,
+    });
+    console.log(`[Cloudinary] Resume upload success: ${result.secure_url}`);
+
+    // Delete local file after upload
+    if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
     const updated = await prisma.user.update({
       where: { id: me.id },
-      data: { resumeUrl: relPath },
+      data: { resumeUrl: result.secure_url },
       select: { id: true, resumeUrl: true },
     });
 
