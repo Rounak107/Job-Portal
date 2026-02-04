@@ -7,8 +7,8 @@ import {
   getAllRecruiters,
   getAllApplicants,
   getAllApplications,
-   getRecruiterById,
-  getAllJobs, 
+  getRecruiterById,
+  getAllJobs,
 } from "../controllers/adminController";
 import prisma from "../prisma";
 
@@ -22,14 +22,7 @@ router.get("/stats", getAdminStats);
 
 // Recruiters list
 router.get("/recruiters", getAllRecruiters);
-router.get("/recruiters/:id", async (req, res) => {
-  const recruiterId = parseInt(req.params.id);
-  const recruiter = await prisma.user.findUnique({
-    where: { id: recruiterId },
-    include: { jobs: true, applications: true }
-  });
-  res.json(recruiter);
-});
+router.get("/recruiters/:id", getRecruiterById);
 
 
 // Applicants list

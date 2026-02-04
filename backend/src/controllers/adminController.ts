@@ -77,9 +77,13 @@ export async function getAllRecruiters(req: Request, res: Response) {
     });
 
     res.json(transformed);
-  } catch (err) {
+  } catch (err: any) {
     console.error("getAllRecruiters error", err);
-    res.status(500).json({ error: "Failed to fetch recruiters" });
+    res.status(500).json({
+      error: "Failed to fetch recruiters",
+      details: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 }
 
@@ -205,12 +209,12 @@ export async function getAllApplicants(req: Request, res: Response) {
         applicationCount,
         latestApplication: lastApp
           ? {
-              jobId: lastApp.job?.id,
-              jobTitle: lastApp.job?.title,
-              company: lastApp.job?.company,
-              status: lastApp.status,
-              appliedAt: lastApp.createdAt,
-            }
+            jobId: lastApp.job?.id,
+            jobTitle: lastApp.job?.title,
+            company: lastApp.job?.company,
+            status: lastApp.status,
+            appliedAt: lastApp.createdAt,
+          }
           : null,
         // optionally include full applications if you want:
         applications: apps.map((ap) => ({
@@ -250,6 +254,7 @@ export async function getAllApplications(req: Request, res: Response) {
       jobId: a.job?.id ?? null,
       jobTitle: a.job?.title ?? "",
       jobCompany: a.job?.company ?? "",
+      recruiterId: a.job?.postedById ?? null,
       applicantId: a.user?.id ?? null,
       applicantName: a.user?.name ?? "",
       applicantEmail: a.user?.email ?? "",
@@ -258,8 +263,12 @@ export async function getAllApplications(req: Request, res: Response) {
     }));
 
     res.json(transformed);
-  } catch (err) {
+  } catch (err: any) {
     console.error("getAllApplications error", err);
-    res.status(500).json({ error: "Failed to fetch applications" });
+    res.status(500).json({
+      error: "Failed to fetch applications",
+      details: err.message,
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   }
 }
