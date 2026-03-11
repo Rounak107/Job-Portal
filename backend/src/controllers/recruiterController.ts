@@ -17,7 +17,7 @@ export const getRecruiterMe = async (req: Request, res: Response) => {
     // recruiter profile
     const profile = await prisma.user.findUnique({
       where: { id: currentUser.id },
-      select: { id: true, name: true, email: true, loginCount: true },
+      select: { id: true, name: true, email: true, loginCount: true, createdAt: true },
     });
 
     // recruiter jobs
@@ -43,9 +43,11 @@ export const getRecruiterMe = async (req: Request, res: Response) => {
     );
 
     // analytics
-    const months = 6;
     const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+    const signupDate = profile?.createdAt || now;
+    const monthsSinceSignup = (now.getFullYear() - signupDate.getFullYear()) * 12 + (now.getMonth() - signupDate.getMonth()) + 1;
+    const monthsToDisplay = Math.max(6, monthsSinceSignup); // Show at least 6 months
+    const start = new Date(now.getFullYear(), now.getMonth() - (monthsToDisplay - 1), 1);
 
     const viewsRaw = await prisma.jobView.findMany({
       where: {
@@ -65,10 +67,10 @@ export const getRecruiterMe = async (req: Request, res: Response) => {
 
     function buildMonthlyCounts(items: { createdAt: Date }[]) {
       const buckets: Record<string, number> = {};
-      for (let i = 0; i < months; i++) {
+      for (let i = 0; i < monthsToDisplay; i++) {
         const d = new Date(
           now.getFullYear(),
-          now.getMonth() - (months - 1) + i,
+          now.getMonth() - (monthsToDisplay - 1) + i,
           1
         );
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(

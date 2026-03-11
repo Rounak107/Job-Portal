@@ -124,15 +124,53 @@ export async function getRecruiterById(req: Request, res: Response) {
       views: job.views || 0,
     }));
 
-    // Build analytics data (simplified version)
+    // Build analytics data (full time)
     const now = new Date();
-    const months = 6;
-    const start = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+    const signupDate = recruiter.createdAt || now;
+    const monthsSinceSignup = (now.getFullYear() - signupDate.getFullYear()) * 12 + (now.getMonth() - signupDate.getMonth()) + 1;
+    const monthsToDisplay = Math.max(6, monthsSinceSignup);
+    const start = new Date(now.getFullYear(), now.getMonth() - (monthsToDisplay - 1), 1);
 
-    // You'll need to fetch proper analytics data here
-    // For now, returning empty arrays as placeholders
-    const viewsByMonth: { month: string; count: number }[] = [];
-    const appsByMonth: { month: string; count: number }[] = [];
+    const viewsRaw = await prisma.jobView.findMany({
+      where: {
+        job: { postedById: recruiterId },
+        createdAt: { gte: start },
+      },
+      select: { createdAt: true },
+    });
+
+    const appsRaw = await prisma.application.findMany({
+      where: {
+        job: { postedById: recruiterId },
+        createdAt: { gte: start },
+      },
+      select: { createdAt: true },
+    });
+
+    function buildMonthlyCounts(items: { createdAt: Date }[]) {
+      const buckets: Record<string, number> = {};
+      for (let i = 0; i < monthsToDisplay; i++) {
+        const d = new Date(
+          now.getFullYear(),
+          now.getMonth() - (monthsToDisplay - 1) + i,
+          1
+        );
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}`;
+        buckets[key] = 0;
+      }
+      items.forEach((it) => {
+        const d = new Date(it.createdAt);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+          2,
+          "0"
+        )}`;
+        if (buckets[key] !== undefined) buckets[key] += 1;
+      });
+      return Object.keys(buckets).map((k) => ({ month: k, count: buckets[k] }));
+    }
 
     res.json({
       profile: {
@@ -140,6 +178,7 @@ export async function getRecruiterById(req: Request, res: Response) {
         name: recruiter.name,
         email: recruiter.email,
         loginCount: recruiter.loginCount || 0,
+        createdAt: recruiter.createdAt,
       },
       stats: {
         jobCount,
@@ -149,8 +188,8 @@ export async function getRecruiterById(req: Request, res: Response) {
       },
       jobs,
       analytics: {
-        viewsByMonth,
-        appsByMonth,
+        viewsByMonth: buildMonthlyCounts(viewsRaw),
+        appsByMonth: buildMonthlyCounts(appsRaw),
       },
     });
   } catch (err) {
