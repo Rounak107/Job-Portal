@@ -39,7 +39,7 @@ router.post('/jobs/:id/apply-file', authMiddleware, upload.single('resume'), asy
     // Upload to Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: 'job_applications',
-      resource_type: 'raw',
+      resource_type: 'auto', // Use auto so PDFs are treated as images/documents for better delivery
       public_id: `resume_job_${jobId}_user_${userId}_${Date.now()}`,
     });
 
@@ -178,7 +178,79 @@ router.get('/:id/resume', authMiddleware, async (req, res) => {
     const application = await prisma.application.findUnique({ where: { id: appId } });
     if (!application) return res.status(404).json({ message: 'Application not found' });
 
-    // If it's already a full Cloudinary URL, just redirect
+    // If it's a Cloudinary URL, use generate_archive + AdmZip to bypass ACL restrictions
+    // This is the ONLY method that consistently works for restricted Cloudinary accounts.
+    if (application.resumeUrl.startsWith('http') && application.resumeUrl.includes('cloudinary')) {
+      try {
+        const urlParts = application.resumeUrl.split('/upload/');
+        if (urlParts.length > 1) {
+          let afterUpload = urlParts[1];
+          if (/^v\d+\//.test(afterUpload)) {
+            afterUpload = afterUpload.replace(/^v\d+\//, '');
+          }
+          const publicId = afterUpload;
+          const isRaw = application.resumeUrl.includes('/raw/');
+
+          const archiveUrl = (cloudinary.utils as any).download_zip_url({
+            resource_type: isRaw ? 'raw' : 'image',
+            public_ids: [publicId],
+            flatten_folders: true,
+            expires_at: Math.floor(Date.now() / 1000) + 600,
+          });
+
+          const https = await import('https');
+          const AdmZip = await import('adm-zip');
+
+          const proxyReq = https.get(archiveUrl, (cloudRes) => {
+            const chunks: Buffer[] = [];
+            
+            if (cloudRes.statusCode !== 200) {
+              console.error(`Cloudinary archive failed: ${cloudRes.statusCode}`);
+              return res.status(cloudRes.statusCode || 502).json({ message: 'Failed to fetch resume from storage' });
+            }
+
+            cloudRes.on('data', (chunk) => chunks.push(chunk));
+            cloudRes.on('end', () => {
+              try {
+                const zipBuffer = Buffer.concat(chunks);
+                const zip = new AdmZip.default(zipBuffer);
+                const zipEntries = zip.getEntries();
+                
+                // Find the PDF file inside the ZIP
+                const pdfEntry = zipEntries.find(e => e.entryName.toLowerCase().endsWith('.pdf'));
+                
+                if (pdfEntry) {
+                  const pdfBuffer = pdfEntry.getData();
+                  const fileName = path.basename(publicId).replace(/\.pdf$/, '') + '.pdf';
+                  
+                  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+                  res.setHeader('Content-Type', 'application/pdf');
+                  res.setHeader('Content-Length', pdfBuffer.length);
+                  res.send(pdfBuffer);
+                } else {
+                   // Fallback: if no PDF in zip (unlikely), just send the whole zip
+                   res.setHeader('Content-Type', 'application/zip');
+                   res.send(zipBuffer);
+                }
+              } catch (zipErr) {
+                console.error('ZIP extraction failed:', zipErr);
+                res.status(500).json({ message: 'Failed to process resume file' });
+              }
+            });
+          });
+
+          proxyReq.on('error', (e) => {
+            console.error('Proxy request error:', e);
+            res.status(500).json({ message: 'Network error fetching resume' });
+          });
+          return;
+        }
+      } catch (cloudErr) {
+        console.error('Backend proxy error:', cloudErr);
+      }
+    }
+
+    // Fallback for other external URLs
     if (application.resumeUrl.startsWith('http')) {
       return res.redirect(application.resumeUrl);
     }
