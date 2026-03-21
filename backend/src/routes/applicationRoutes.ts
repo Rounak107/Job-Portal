@@ -188,8 +188,8 @@ router.get('/:id/resume', authMiddleware, async (req, res) => {
           if (/^v\d+\//.test(afterUpload)) {
             afterUpload = afterUpload.replace(/^v\d+\//, '');
           }
-          const publicId = afterUpload;
           const isRaw = application.resumeUrl.includes('/raw/');
+          const publicId = isRaw ? afterUpload : afterUpload.replace(/\.[^/.]+$/, '');
 
           const archiveUrl = (cloudinary.utils as any).download_zip_url({
             resource_type: isRaw ? 'raw' : 'image',
@@ -205,8 +205,12 @@ router.get('/:id/resume', authMiddleware, async (req, res) => {
             const chunks: Buffer[] = [];
             
             if (cloudRes.statusCode !== 200) {
-              console.error(`Cloudinary archive failed: ${cloudRes.statusCode}`);
-              return res.status(cloudRes.statusCode || 502).json({ message: 'Failed to fetch resume from storage' });
+              console.error(`[PDF_DOWNLOAD_FAIL] Cloudinary status ${cloudRes.statusCode} for archiveUrl: ${archiveUrl}`);
+              return res.status(cloudRes.statusCode || 502).json({ 
+                message: 'Failed to fetch resume from storage',
+                code: cloudRes.statusCode,
+                url_attempted: archiveUrl
+              });
             }
 
             cloudRes.on('data', (chunk) => chunks.push(chunk));
