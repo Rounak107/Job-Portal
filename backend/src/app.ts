@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
 import prisma from './prisma';
 import userRoutes from './routes/userRoutes';
 import jobRoutes from './routes/jobRoutes';
@@ -11,8 +10,6 @@ import recruiterRoutes from './routes/recruiterRoutes';
 import testEmailRoutes from "./routes/testEmail";
 import adminRoutes from './routes/adminRoutes';
 import aiRoutes from './routes/aiRoutes';
-
-dotenv.config(); // Load .env
 
 const app = express();
 

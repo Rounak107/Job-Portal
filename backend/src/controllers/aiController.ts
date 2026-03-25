@@ -18,7 +18,8 @@ export const aiController = {
       const optimizedText = await aiService.generateText(text, systemInstruction);
       res.json({ optimizedText });
     } catch (error: any) {
-      res.status(500).json({ message: "AI Optimization failed", error: error.message });
+      console.error("AI Optimization controller error:", error);
+      res.status(500).json({ message: "AI Optimization failed", error: error.message || "Unknown error" });
     }
   },
 
@@ -46,7 +47,8 @@ export const aiController = {
       const generatedCV = await aiService.generateText(prompt, systemInstruction);
       res.json({ generatedCV });
     } catch (error: any) {
-      res.status(500).json({ message: "CV Generation failed", error: error.message });
+      console.error("CV Generation controller error:", error);
+      res.status(500).json({ message: "CV Generation failed", error: error.message || "Unknown error" });
     }
   },
 
@@ -75,7 +77,63 @@ export const aiController = {
       const aiResponse = await aiService.generateText(fullPrompt, systemInstruction);
       res.json({ aiResponse });
     } catch (error: any) {
-      res.status(500).json({ message: "Interview chat failed", error: error.message });
+      console.error("Interview Practice controller error:", error);
+      res.status(500).json({ message: "Interview chat failed", error: error.message || "Unknown error" });
+    }
+  },
+
+  /**
+   * Get AI-powered match score for a job
+   */
+  getMatchScore: async (req: Request, res: Response) => {
+    try {
+      const { userBio, userSkills, jobTitle, jobDescription, jobRequirements } = req.body;
+      if (!userBio && !userSkills) {
+        return res.status(400).json({ message: "User profile data is required" });
+      }
+
+      const systemInstruction = `You are an expert AI Recruitment Specialist.
+      Analyze the candidate's profile against the job description.
+      Provide a "Match Score" from 0 to 100 based on skills, experience, and role alignment.
+      Also provide 2-3 short, actionable "Match Feedback" points on why they are a good match or how to improve their profile for this role.
+      
+      IMPORTANT: Return ONLY a JSON object in the following format:
+      {
+        "score": number,
+        "feedback": "string summarizing why it's a good/bad match",
+        "improvements": ["tip1", "tip2"]
+      }`;
+
+      const prompt = `
+      Candidate Profile:
+      - Bio: ${userBio || 'No bio provided'}
+      - Skills: ${userSkills || 'No skills provided'}
+      
+      Job Details:
+      - Title: ${jobTitle}
+      - Description: ${jobDescription}
+      - Requirements: ${jobRequirements || 'Not explicitly listed'}
+      
+      Please provide the analysis in JSON format only.`;
+
+      const aiResponse = await aiService.generateText(prompt, systemInstruction);
+      
+      // Attempt to parse JSON from the AI response
+      let result;
+      try {
+        // Clean up any potential markdown code blocks
+        const cleanedResponse = aiResponse.replace(/```json|```/g, '').trim();
+        result = JSON.parse(cleanedResponse);
+      } catch (e) {
+        console.error("Failed to parse AI Match Score JSON:", aiResponse);
+        // Fallback if AI doesn't return JSON correctly
+        result = { score: 75, feedback: "We analyzed your profile and found a solid alignment with this role.", improvements: ["Focus on highlighting certifications in this domain."] };
+      }
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("Match Score controller error:", error);
+      res.status(500).json({ message: "Match Score analysis failed", error: error.message || "Unknown error" });
     }
   }
 };

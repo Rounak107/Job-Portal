@@ -3,7 +3,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
 if (!GEMINI_API_KEY) {
-  console.error("GEMINI_API_KEY is not set in environment variables.");
+  console.error("❌ GEMINI_API_KEY is not set in environment variables.");
+} else {
+  console.log("✅ GEMINI_API_KEY is detected (length: " + GEMINI_API_KEY.length + ")");
 }
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -26,8 +28,8 @@ export const aiService = {
       const response = await result.response;
       return response.text();
     } catch (error: any) {
-      console.error("Gemini generateText error:", error.message || error);
-      throw new Error("AI generation failed.");
+      console.error("❌ Gemini generateText error:", error);
+      throw error; // Throw the original error so we can see the real message
     }
   },
 
@@ -40,8 +42,8 @@ export const aiService = {
       const result = await model.embedContent(text);
       return result.embedding.values;
     } catch (error: any) {
-      console.error("Gemini getEmbedding error:", error.message || error);
-      throw new Error("AI embedding failed.");
+      console.error("❌ Gemini getEmbedding error:", error);
+      throw error;
     }
   }
 };

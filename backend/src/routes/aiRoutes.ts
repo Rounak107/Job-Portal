@@ -11,4 +11,7 @@ router.post('/generate-cv', authMiddleware, aiController.generateCV);
 // Interview Practice
 router.post('/interview-chat', authMiddleware, aiController.interviewChat);
 
+// Match Score
+router.post('/match-score', authMiddleware, aiController.getMatchScore);
+
 export default router;
