@@ -10,6 +10,7 @@ import path from 'path';
 import recruiterRoutes from './routes/recruiterRoutes';
 import testEmailRoutes from "./routes/testEmail";
 import adminRoutes from './routes/adminRoutes';
+import aiRoutes from './routes/aiRoutes';
 
 dotenv.config(); // Load .env
 
@@ -76,6 +77,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use("/api/admin", adminRoutes);
 app.use('/api/recruiter', recruiterRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api', testEmailRoutes);
 
 app.get('/api/health', (_req, res) => {
