@@ -20,7 +20,8 @@ export const aiService = {
    * Generates text based on a prompt (using Gemini Flash Latest)
    */
   async generateText(prompt: string, systemInstruction?: string): Promise<string> {
-    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-flash-latest"];
+    // 2026 Model Support: 1.5 is deprecated (404), Flash Latest (Gemini 3) has strict quotas (429).
+    const modelsToTry = ["gemini-2.5-flash", "gemini-3-flash", "gemini-flash-latest"];
     let lastError: any = null;
 
     for (const modelName of modelsToTry) {
@@ -37,16 +38,20 @@ export const aiService = {
         lastError = error;
         // If it's a 404 (model not found), log and try the next one
         if (error.message?.includes("404") || error.status === 404) {
-          console.warn(`⚠️ Model ${modelName} not found or unsupported. Trying next...`);
+          console.warn(`⚠️ Model ${modelName} not found (404). Trying next...`);
           continue;
         }
-        // If it's another error (like 429 quota), throw so the controller can catch it
+        // If it's a 429 (Quota), throw a friendly message
+        if (error.message?.includes("429") || error.message?.includes("quota")) {
+          throw new Error(`Google AI Rate Limit Exceeded. Please wait 60 seconds and try again. (Model: ${modelName})`);
+        }
+        
         console.error(`❌ Gemini error with ${modelName}:`, error);
         throw error;
       }
     }
     
-    throw lastError || new Error("All AI models failed to respond.");
+    throw lastError || new Error("All AI models failed or are deprecated.");
   },
 
   /**
