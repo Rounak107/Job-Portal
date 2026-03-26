@@ -3,9 +3,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
 
 if (!GEMINI_API_KEY) {
-  console.error("❌ GEMINI_API_KEY is not set in environment variables.");
+  console.error("❌ GEMINI_API_KEY is missing! Gemini AI features will NOT work.");
+} else if (GEMINI_API_KEY.includes(" ")) {
+  console.error("❌ GEMINI_API_KEY contains spaces! This will likely cause authentication failures.");
 } else {
-  console.log("✅ GEMINI_API_KEY is detected (length: " + GEMINI_API_KEY.length + ")");
+  console.log("✅ GEMINI_API_KEY detected (Length: " + GEMINI_API_KEY.length + ", Format OK)");
 }
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
