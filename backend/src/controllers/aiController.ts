@@ -30,7 +30,8 @@ export const aiController = {
     try {
       const { 
         name, targetRole, phone, email, location,
-        bio, skills, education, experience, projects, certifications 
+        bio, skills, education, experience, projects, certifications,
+        isVariation 
       } = req.body;
       
       if (!name || !targetRole || !skills) {
@@ -40,6 +41,7 @@ export const aiController = {
       const systemInstruction = `You are an elite AI Resume Builder used by Fortune 500 recruiters.
       Your task is to generate a complete, professional, ATS-optimized resume in structured JSON format.
       Be specific, use strong action verbs, and quantify impact wherever possible.
+      ${isVariation ? 'IMPORTANT: This is a REGENERATION. Provide a distinct variation in tone, structure, and highlighted achievements compared to a standard version. Be creative but remain professional.' : ''}
       
       CRITICAL: Return ONLY a valid JSON object with NO markdown, NO code blocks, NO extra text.
       Use exactly this structure:
