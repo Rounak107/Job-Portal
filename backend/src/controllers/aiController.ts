@@ -24,28 +24,62 @@ export const aiController = {
   },
 
   /**
-   * Generate a full CV based on user data
+   * Generate a full CV based on user data - returns structured JSON
    */
   generateCV: async (req: Request, res: Response) => {
     try {
-      const { name, currentProfession, targetRole, experienceLevel, additionalInfo } = req.body;
+      const { 
+        name, targetRole, phone, email, location,
+        bio, skills, education, experience, projects, certifications 
+      } = req.body;
       
-      const systemInstruction = `You are an expert AI Resume Builder. 
-      Generate a complete, professional, ATS-friendly CV formatted in Markdown.
-      Include sections for: Summary/Objective, Core Competencies/Skills, Professional Experience, and Education.
-      Please make it highly tailored to the target role. DO NOT wrap the response in markdown code blocks, just return the raw markdown text.`;
+      if (!name || !targetRole || !skills) {
+        return res.status(400).json({ message: "Name, Target Role, and Skills are required" });
+      }
 
-      const prompt = `Candidate Details:
-      - Name: ${name || 'Candidate'}
-      - Current Profession: ${currentProfession || 'Not specified'}
-      - Target Role: ${targetRole || 'Not specified'}
-      - Experience Level: ${experienceLevel || 'Not specified'}
-      - Additional Information/Highlights: ${additionalInfo || 'None provided'}
+      const systemInstruction = `You are an elite AI Resume Builder used by Fortune 500 recruiters.
+      Your task is to generate a complete, professional, ATS-optimized resume in structured JSON format.
+      Be specific, use strong action verbs, and quantify impact wherever possible.
       
-      Please generate a comprehensive and impressive CV based on these details. Expand on the details intelligently to sound professional.`;
+      CRITICAL: Return ONLY a valid JSON object with NO markdown, NO code blocks, NO extra text.
+      Use exactly this structure:
+      {
+        "summary": "2-3 sentences professional summary targeted to the role",
+        "skills": ["skill1", "skill2", "skill3", ...],
+        "experience": [{ "title": "", "company": "", "duration": "", "bullets": ["", ""] }],
+        "projects": [{ "name": "", "description": "", "technologies": "" }],
+        "education": [{ "degree": "", "institution": "", "year": "" }],
+        "certifications": ["cert1", "cert2"]
+      }`;
 
-      const generatedCV = await aiService.generateText(prompt, systemInstruction);
-      res.json({ generatedCV });
+      const prompt = `Build an industry-level resume for:
+      - Full Name: ${name}
+      - Target Job Role: ${targetRole}
+      - Phone: ${phone || 'Not provided'}
+      - Email: ${email || 'Not provided'}
+      - Location: ${location || 'Not provided'}
+      - Bio/About: ${bio || 'Not provided'}
+      - Technical Skills: ${skills}
+      - Work Experience: ${experience || 'Fresher / Not provided'}
+      - Projects: ${projects || 'No specific projects mentioned'}
+      - Education: ${education || 'Not provided'}
+      - Certifications & Achievements: ${certifications || 'None'}
+      
+      Generate a polished, impressive resume. Expand details intelligently to sound professional. 
+      Return ONLY the JSON object.`;
+
+      const aiResponseRaw = await aiService.generateText(prompt, systemInstruction);
+      
+      let cvData;
+      try {
+        const cleaned = aiResponseRaw.replace(/```json|```/g, '').trim();
+        cvData = JSON.parse(cleaned);
+      } catch (e) {
+        console.error("CV JSON parse error:", aiResponseRaw);
+        return res.status(500).json({ message: "AI returned malformed data. Try again." });
+      }
+
+      res.json({ generatedCV: cvData });
     } catch (error: any) {
       console.error("CV Generation controller error:", error);
       res.status(500).json({ message: "CV Generation failed", error: error.message || "Unknown error" });
