@@ -26,8 +26,8 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 async function testConnection() {
   try {
-    console.log("📡 Sending test prompt to Gemini 1.5 Flash...");
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    console.log("📡 Sending test prompt to Gemini Flash Latest...");
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
     const result = await model.generateContent("Say 'Hello, I am Gemini and I am ready to help!'");
     const response = await result.response;
     const text = response.text();

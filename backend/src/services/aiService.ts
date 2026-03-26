@@ -17,12 +17,12 @@ const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
  */
 export const aiService = {
   /**
-   * Generates text based on a prompt (using Gemini 1.5 Flash)
+   * Generates text based on a prompt (using Gemini Flash Latest)
    */
   async generateText(prompt: string, systemInstruction?: string): Promise<string> {
     try {
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
+        model: "gemini-flash-latest",
         systemInstruction: systemInstruction 
       });
       
