@@ -20,19 +20,33 @@ export const aiService = {
    * Generates text based on a prompt (using Gemini Flash Latest)
    */
   async generateText(prompt: string, systemInstruction?: string): Promise<string> {
-    try {
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash",
-        systemInstruction: systemInstruction 
-      });
-      
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      return response.text();
-    } catch (error: any) {
-      console.error("❌ Gemini generateText error:", error);
-      throw error; // Throw the original error so we can see the real message
+    const modelsToTry = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-flash-latest"];
+    let lastError: any = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({ 
+          model: modelName,
+          systemInstruction: systemInstruction 
+        });
+        
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+      } catch (error: any) {
+        lastError = error;
+        // If it's a 404 (model not found), log and try the next one
+        if (error.message?.includes("404") || error.status === 404) {
+          console.warn(`⚠️ Model ${modelName} not found or unsupported. Trying next...`);
+          continue;
+        }
+        // If it's another error (like 429 quota), throw so the controller can catch it
+        console.error(`❌ Gemini error with ${modelName}:`, error);
+        throw error;
+      }
     }
+    
+    throw lastError || new Error("All AI models failed to respond.");
   },
 
   /**
