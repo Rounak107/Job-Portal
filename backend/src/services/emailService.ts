@@ -4,6 +4,12 @@ import path from "path";
 import Handlebars from "handlebars";
 import nodemailer from "nodemailer";
 
+// Register custom helpers
+Handlebars.registerHelper('if_eq', function(a: any, b: any, opts: any) {
+  if (a == b) { return opts.fn(this as any); }
+  else { return opts.inverse(this as any); }
+});
+
 // ----------------- ENV -----------------
 const FROM_EMAIL = process.env.FROM_EMAIL || "JobRun <no-reply@jobrun.in>";
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL || "http://localhost:5173";

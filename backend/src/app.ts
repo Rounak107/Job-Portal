@@ -10,6 +10,7 @@ import recruiterRoutes from './routes/recruiterRoutes';
 import testEmailRoutes from "./routes/testEmail";
 import adminRoutes from './routes/adminRoutes';
 import aiRoutes from './routes/aiRoutes';
+import interviewRoutes from './routes/interviewRoutes';
 
 const app = express();
 
@@ -75,6 +76,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use("/api/admin", adminRoutes);
 app.use('/api/recruiter', recruiterRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/interview', interviewRoutes);
 app.use('/api', testEmailRoutes);
 
 app.get('/api/health', (_req, res) => {

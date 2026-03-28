@@ -66,5 +66,21 @@ export const aiService = {
       console.error("❌ Gemini getEmbedding error:", error);
       throw error;
     }
+  },
+
+  /**
+   * Generates response for AI Voice Interview
+   */
+  async generateInterviewResponse(history: { role: string, text: string }[], currentAnswer: string, jobRole: string): Promise<string> {
+    const systemInstruction = `You are a professional technical and HR interviewer for the role: ${jobRole}.
+    Keep your responses short, conversational, and spoken-language friendly.
+    Ask one question at a time. Do not provide a list of questions.
+    Provide brief constructive feedback on the previous answer before asking the next question.
+    Only ask questions relevant to the role. Keep the interview flowing naturally.`;
+
+    let convo = history.map(h => `${h.role === 'model' ? 'Interviewer' : 'Applicant'}: ${h.text}`).join('\n');
+    const prompt = `Conversation so far:\n${convo}\n\nApplicant: ${currentAnswer}\n\nInterviewer:`;
+    
+    return this.generateText(prompt, systemInstruction);
   }
 };

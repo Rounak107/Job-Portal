@@ -31,6 +31,7 @@ export const aiController = {
       const { 
         name, targetRole, phone, email, location,
         bio, skills, education, experience, projects, certifications,
+        hobbies, address, strengths,
         isVariation 
       } = req.body;
       
@@ -51,7 +52,9 @@ export const aiController = {
         "experience": [{ "title": "", "company": "", "duration": "", "bullets": ["", ""] }],
         "projects": [{ "name": "", "description": "", "technologies": "" }],
         "education": [{ "degree": "", "institution": "", "year": "" }],
-        "certifications": ["cert1", "cert2"]
+        "certifications": ["cert1", "cert2"],
+        "hobbies": ["hobby1", "hobby2"],
+        "strengths": ["strength1", "strength2"]
       }`;
 
       const prompt = `Build an industry-level resume for:
@@ -66,6 +69,9 @@ export const aiController = {
       - Projects: ${projects || 'No specific projects mentioned'}
       - Education: ${education || 'Not provided'}
       - Certifications & Achievements: ${certifications || 'None'}
+      - Hobbies/Interests: ${hobbies || 'Not provided'}
+      - Personal Address: ${address || 'Not provided'}
+      - Key Strengths: ${strengths || 'Not provided'}
       
       Generate a polished, impressive resume. Expand details intelligently to sound professional. 
       Return ONLY the JSON object.`;
@@ -96,15 +102,17 @@ export const aiController = {
       const { message, history, jobTitle, jobDescription } = req.body;
       if (!message) return res.status(400).json({ message: "Message is required" });
 
-      const systemInstruction = `You are a professional HR manager interviewing a candidate for the position of "${jobTitle || 'Job Applicant'}".
-      Job Description context: ${jobDescription || 'Standard industry role'}.
+      const systemInstruction = `You are an expert technical interviewer and senior lead engineer interviewing a candidate for the role of "${jobTitle || 'Job Applicant'}".
+      Context: ${jobDescription || 'Professional industry role'}.
       
-      Your goal is to conduct a realistic, friendly, but challenging interview. 
-      Ask ONE relevant behavioral or technical question at a time. 
-      Wait for the candidate's response before asking the next one.
-      If the candidate's answer is brief, ask for more detail.
+      Your goal is to conduct a rigorous in-depth technical interview. 
+      - Prioritize testing deep technical knowledge, architecture patterns, and problem-solving relevant to the "${jobTitle}" role.
+      - Ask ONE specific technical or situational question at a time.
+      - If the candidate's answer is good, increase the difficulty of the next question.
+      - If the candidate is vague, push for specific technical details or code-level explanations.
+      - Balance with 1-2 behavioral questions, but keep the core focus on technical expertise.
       
-      Format: Keep your responses concise (under 3 sentences) to maintain a natural conversation flow.`;
+      Format: Keep your responses professional and concise (under 4 sentences).`;
 
       // In a real implementation, we would send the history as well. 
       // For now, we append history to the prompt for simplicity.
