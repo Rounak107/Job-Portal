@@ -5,9 +5,9 @@ import Handlebars from "handlebars";
 import nodemailer from "nodemailer";
 
 // Register custom helpers
-Handlebars.registerHelper('if_eq', function(a: any, b: any, opts: any) {
-  if (a == b) { return opts.fn(this as any); }
-  else { return opts.inverse(this as any); }
+Handlebars.registerHelper('if_eq', function(this: any, a: any, b: any, opts: any) {
+  if (a == b) { return opts.fn(this); }
+  else { return opts.inverse(this); }
 });
 
 // ----------------- ENV -----------------
