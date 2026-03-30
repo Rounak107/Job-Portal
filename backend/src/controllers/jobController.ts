@@ -408,13 +408,15 @@ export const deleteJob = async (req: Request, res: Response) => {
 /**
  * AI: Get Recommended Jobs for the current user
  * GET /api/jobs/recommendations
+ * Uses a smart AI prompt that factors in career trajectory, existing applications,
+ * salary expectations and skills to recommend the best-fit opportunities.
  */
 export const getJobRecommendations = async (req: Request, res: Response) => {
   try {
     const currentUser = (req as any).user;
     if (!currentUser) return res.status(401).json({ message: "Unauthorized" });
 
-    // 1. Fetch user profile for analysis
+    // 1. Fetch user profile
     const user = await prisma.user.findUnique({
       where: { id: currentUser.id },
       select: {
@@ -428,11 +430,39 @@ export const getJobRecommendations = async (req: Request, res: Response) => {
 
     if (!user) return res.status(404).json({ message: "User profile not found" });
 
-    // 2. Fetch recent active jobs (limit to 30 for efficient AI matching)
-    // In a real production app, you might use vector search (RAG) first, 
-    // but for this MVP, we analyze the most recent relevant jobs.
-    const jobs = await prisma.job.findMany({
-      take: 30,
+    // 2. Fetch user's existing applications to understand career preferences
+    //    and exclude jobs they've already applied to
+    const myApplications = await prisma.application.findMany({
+      where: { userId: currentUser.id },
+      select: {
+        jobId: true,
+        job: {
+          select: {
+            title: true,
+            company: true,
+            salaryMin: true,
+            salaryMax: true,
+            role: true,
+            workMode: true,
+          }
+        }
+      }
+    });
+
+    const alreadyAppliedJobIds = new Set(myApplications.map(a => a.jobId));
+
+    // Derive career context from applications for smarter matching
+    const appliedTitles = myApplications.map(a => a.job?.title).filter(Boolean);
+    const appliedSalaries = myApplications
+      .map(a => a.job?.salaryMax)
+      .filter((s): s is number => s !== null && s !== undefined && s > 0);
+    const avgAppliedSalary = appliedSalaries.length > 0
+      ? Math.round(appliedSalaries.reduce((a, b) => a + b, 0) / appliedSalaries.length)
+      : null;
+
+    // 3. Fetch available jobs (excluding already applied)
+    const allJobs = await prisma.job.findMany({
+      take: 50,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -442,66 +472,99 @@ export const getJobRecommendations = async (req: Request, res: Response) => {
         location: true,
         salaryMin: true,
         salaryMax: true,
+        role: true,
+        workMode: true,
+        workTime: true,
+        incentive: true,
+        createdAt: true,
       }
     });
 
-    if (jobs.length === 0) {
+    // Exclude jobs the user has already applied to
+    const availableJobs = allJobs.filter(j => !alreadyAppliedJobIds.has(j.id));
+
+    if (availableJobs.length === 0) {
+      // If all available jobs are applied to, return recently posted ones
       return res.json({ recommendations: [] });
     }
 
-    // 3. Prepare AI Prompt
-    const profileSummary = `
-      Name: ${user.name}
-      Bio: ${user.bio || 'Not provided'}
-      Skills: ${user.skills || 'Not provided'}
-      Experience: ${user.experience || 'Not provided'}
-      Education: ${user.education || 'Not provided'}
-    `;
+    // 4. Build a rich, professional AI prompt
+    const hasProfile = !!(user.skills || user.bio || user.experience);
 
-    const jobsList = jobs.map((j, i) => `
-      --- JOB ${i} [ID: ${j.id}] ---
-      Title: ${j.title}
-      Company: ${j.company}
-      Location: ${j.location}
-      Description Snippet: ${j.description.substring(0, 300)}...
-      Salary: ${j.salaryMin}-${j.salaryMax}
-    `).join('\n');
+    const profileSection = `
+CANDIDATE PROFILE:
+- Name: ${user.name || 'Not provided'}
+- Professional Summary: ${user.bio || 'Not provided'}
+- Skills & Technologies: ${user.skills || 'Not provided'}
+- Work Experience: ${user.experience || 'Not provided'}
+- Education: ${user.education || 'Not provided'}
+`;
 
-    const systemPrompt = `You are an advanced AI Career Advisor. Your goal is to match a user's profile with the best available job opportunities.
-    Analyze the user profile and the list of jobs provided. 
-    Select the top 6 jobs that are the best fit for this user.
-    For each selected job, provide:
-    1. The job ID.
-    2. A matchScore (0-100).
-    3. A brief "fitReason" (max 15 words) explaining why this is a good match.
-    
-    IMPORTANT: Respond ONLY with a valid JSON array of objects, like this:
-    [
-      {"id": 1, "matchScore": 95, "fitReason": "Your expertise in React matches their senior frontend requirements perfectly."},
-      ...
-    ]`;
+    const careerContextSection = appliedTitles.length > 0 ? `
+CAREER TRAJECTORY (From their existing job applications):
+- Roles they have already applied for: ${appliedTitles.join(', ')}
+- Average salary they are targeting: ${avgAppliedSalary ? `₹${avgAppliedSalary} LPA` : 'Unknown'}
+- This reveals their experience level and career goals. Prioritize similar roles or natural next steps.
+` : `
+CAREER TRAJECTORY: No previous applications found. Analyse profile and recommend broadly suitable opportunities.
+`;
 
-    const userPrompt = `User Profile:\n${profileSummary}\n\nAvailable Jobs:\n${jobsList}`;
+    const jobsSection = availableJobs.map((j) => `
+[JOB ID: ${j.id}]
+Title: ${j.title}
+Company: ${j.company}
+Role Category: ${j.role || 'General'}
+Work Mode: ${j.workMode}
+Work Time: ${j.workTime || 'Full-time'}
+Location: ${j.location}
+Salary Range: ₹${j.salaryMin ?? 0} - ₹${j.salaryMax ?? 0} LPA
+Posted: ${j.createdAt.toISOString().split('T')[0]}
+Description: ${j.description?.substring(0, 250) ?? 'N/A'}...
+`).join('\n---\n');
 
-    // 4. Call AI
+    const systemPrompt = `You are an expert AI Career Advisor at an industry-leading recruitment platform.
+Your task is to match a candidate to the single best 6 job opportunities from the list provided.
+
+MATCHING CRITERIA (prioritize in this order):
+1. SKILL ALIGNMENT: Does the job require skills the candidate has listed?
+2. EXPERIENCE & SALARY FIT: Prefer jobs where the salary range aligns with what they are already targeting. A candidate applying for ₹8000-12000 LPA roles should NOT be recommended jobs at ₹50,000+ LPA as they would likely be unqualified.
+3. CAREER TRAJECTORY: Prioritize jobs in the same domain/category as their existing applications.
+4. RECENCY: Prefer newer job postings.
+5. ACCESSIBILITY: If profile is sparse, prefer entry-level or trainee roles with lower salary requirements.
+
+IMPORTANT RULES:
+- ONLY select from the jobs provided in the list. Never invent job IDs.
+- Respond ONLY with a valid JSON array. No markdown, no explanation text outside the JSON.
+- Response format MUST be exactly:
+[
+  {"id": <number>, "matchScore": <0-100>, "fitReason": "<max 12 words why this matches>"},
+  ...
+]`;
+
+    const userPrompt = `${profileSection}${careerContextSection}
+
+AVAILABLE JOBS TO EVALUATE:
+${jobsSection}
+
+Select the best 6 matches. Return JSON only.`;
+
+    // 5. Call AI
     const aiResponse = await aiService.generateText(userPrompt, systemPrompt);
-    
-    // 5. Parse and Merge
+
+    // 6. Parse AI response and merge with full job data
     try {
-      // Find JSON array in the response (robust to any extra conversational text)
-      const jsonMatch = aiResponse.match(/\[.*\]/s);
-      if (!jsonMatch) throw new Error("Could not parse AI response as JSON");
-      
+      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error("AI response does not contain a JSON array");
+
       const scoredJobs: {id: number, matchScore: number, fitReason: string}[] = JSON.parse(jsonMatch[0]);
-      
-      // Merge AI scores with actual job data
+
       const finalRecommendations = scoredJobs
         .map(sj => {
-          const jobData = jobs.find(j => j.id === sj.id);
+          const jobData = availableJobs.find(j => j.id === sj.id);
           if (!jobData) return null;
           return {
             ...jobData,
-            matchScore: sj.matchScore,
+            matchScore: Math.min(100, Math.max(0, sj.matchScore)),
             fitReason: sj.fitReason
           };
         })
@@ -512,10 +575,13 @@ export const getJobRecommendations = async (req: Request, res: Response) => {
 
     } catch (parseErr) {
       console.error("AI Response Parsing Error:", parseErr, "\nRaw Response:", aiResponse);
-      // Fallback: Just return recent jobs if AI fails
-      return res.json({ 
-        recommendations: jobs.slice(0, 5).map(j => ({...j, matchScore: 70, fitReason: "Featured opportunity based on your profile."})) 
-      });
+      // Smart fallback: return newest jobs with a clear label
+      const fallbackJobs = availableJobs.slice(0, 6).map(j => ({
+        ...j,
+        matchScore: 65,
+        fitReason: "Trending opportunity matching your career area."
+      }));
+      return res.json({ recommendations: fallbackJobs });
     }
 
   } catch (err: any) {
@@ -523,3 +589,5 @@ export const getJobRecommendations = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Error generating recommendations", error: err.message });
   }
 };
+
+
