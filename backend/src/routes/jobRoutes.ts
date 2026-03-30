@@ -7,7 +7,8 @@ import {
     getJobFilters,
     getMyJobs,
     updateJob,
-    deleteJob
+    deleteJob,
+    getJobRecommendations
 } from '../controllers/jobController';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { roleMiddleware } from '../middleware/roleMiddleware';
@@ -20,6 +21,9 @@ router.post('/', authMiddleware, roleMiddleware([Role.RECRUITER, Role.ADMIN]), c
 
 // recruiter-only: list my jobs with counts
 router.get('/my', authMiddleware, roleMiddleware([Role.RECRUITER, Role.ADMIN]), getMyJobs);
+
+// AI: Get Job Recommendations for current user
+router.get('/recommendations', authMiddleware, getJobRecommendations);
 
 // update job
 router.patch('/:id', authMiddleware, roleMiddleware([Role.RECRUITER, Role.ADMIN]), updateJob);

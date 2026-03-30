@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma';
 import { Role } from '@prisma/client';
+import { aiService } from '../services/aiService';
 
 /**
  * Safely parse a number from query/body, returning null if empty/NaN.
@@ -401,5 +402,124 @@ export const deleteJob = async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("deleteJob error:", err);
     return res.status(500).json({ message: "Error deleting job", error: err.message });
+  }
+};
+
+/**
+ * AI: Get Recommended Jobs for the current user
+ * GET /api/jobs/recommendations
+ */
+export const getJobRecommendations = async (req: Request, res: Response) => {
+  try {
+    const currentUser = (req as any).user;
+    if (!currentUser) return res.status(401).json({ message: "Unauthorized" });
+
+    // 1. Fetch user profile for analysis
+    const user = await prisma.user.findUnique({
+      where: { id: currentUser.id },
+      select: {
+        name: true,
+        bio: true,
+        skills: true,
+        experience: true,
+        education: true,
+      }
+    });
+
+    if (!user) return res.status(404).json({ message: "User profile not found" });
+
+    // 2. Fetch recent active jobs (limit to 30 for efficient AI matching)
+    // In a real production app, you might use vector search (RAG) first, 
+    // but for this MVP, we analyze the most recent relevant jobs.
+    const jobs = await prisma.job.findMany({
+      take: 30,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        company: true,
+        description: true,
+        location: true,
+        salaryMin: true,
+        salaryMax: true,
+      }
+    });
+
+    if (jobs.length === 0) {
+      return res.json({ recommendations: [] });
+    }
+
+    // 3. Prepare AI Prompt
+    const profileSummary = `
+      Name: ${user.name}
+      Bio: ${user.bio || 'Not provided'}
+      Skills: ${user.skills || 'Not provided'}
+      Experience: ${user.experience || 'Not provided'}
+      Education: ${user.education || 'Not provided'}
+    `;
+
+    const jobsList = jobs.map((j, i) => `
+      --- JOB ${i} [ID: ${j.id}] ---
+      Title: ${j.title}
+      Company: ${j.company}
+      Location: ${j.location}
+      Description Snippet: ${j.description.substring(0, 300)}...
+      Salary: ${j.salaryMin}-${j.salaryMax}
+    `).join('\n');
+
+    const systemPrompt = `You are an advanced AI Career Advisor. Your goal is to match a user's profile with the best available job opportunities.
+    Analyze the user profile and the list of jobs provided. 
+    Select the top 6 jobs that are the best fit for this user.
+    For each selected job, provide:
+    1. The job ID.
+    2. A matchScore (0-100).
+    3. A brief "fitReason" (max 15 words) explaining why this is a good match.
+    
+    IMPORTANT: Respond ONLY with a valid JSON array of objects, like this:
+    [
+      {"id": 1, "matchScore": 95, "fitReason": "Your expertise in React matches their senior frontend requirements perfectly."},
+      ...
+    ]`;
+
+    const userPrompt = `User Profile:\n${profileSummary}\n\nAvailable Jobs:\n${jobsList}`;
+
+    // 4. Call AI
+    const aiResponse = await aiService.generateText(userPrompt, systemPrompt);
+    
+    // 5. Parse and Merge
+    try {
+      // Find JSON array in the response (robust to any extra conversational text)
+      const jsonMatch = aiResponse.match(/\[.*\]/s);
+      if (!jsonMatch) throw new Error("Could not parse AI response as JSON");
+      
+      const scoredJobs: {id: number, matchScore: number, fitReason: string}[] = JSON.parse(jsonMatch[0]);
+      
+      // Merge AI scores with actual job data
+      const finalRecommendations = scoredJobs
+        .map(sj => {
+          const jobData = jobs.find(j => j.id === sj.id);
+          if (!jobData) return null;
+          return {
+            ...jobData,
+            matchScore: sj.matchScore,
+            fitReason: sj.fitReason
+          };
+        })
+        .filter(Boolean)
+        .sort((a: any, b: any) => b.matchScore - a.matchScore);
+
+      return res.json({ recommendations: finalRecommendations });
+
+    } catch (parseErr) {
+      console.error("AI Response Parsing Error:", parseErr, "\nRaw Response:", aiResponse);
+      // Fallback: Just return recent jobs if AI fails
+      return res.json({ 
+        recommendations: jobs.slice(0, 5).map(j => ({...j, matchScore: 70, fitReason: "Featured opportunity based on your profile."})) 
+      });
+    }
+
+  } catch (err: any) {
+    console.error("getJobRecommendations error:", err);
+    return res.status(500).json({ message: "Error generating recommendations", error: err.message });
   }
 };
