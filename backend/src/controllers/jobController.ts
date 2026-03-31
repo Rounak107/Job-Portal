@@ -556,7 +556,21 @@ Select the best 6 matches. Return JSON only.`;
       const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("AI response does not contain a JSON array");
 
-      const scoredJobs: {id: number, matchScore: number, fitReason: string}[] = JSON.parse(jsonMatch[0]);
+      let scoredJobs: {id: number, matchScore: number, fitReason: string}[] = JSON.parse(jsonMatch[0]);
+
+      // If AI returned an empty list or too few, supplement with top available jobs
+      if (scoredJobs.length < 3 && availableJobs.length > 0) {
+        const existingIds = new Set(scoredJobs.map(sj => sj.id));
+        const additional = availableJobs
+          .filter(j => !existingIds.has(j.id))
+          .slice(0, 6 - scoredJobs.length)
+          .map(j => ({
+            id: j.id,
+            matchScore: 60,
+            fitReason: "New discovery opportunity based on trending roles."
+          }));
+        scoredJobs = [...scoredJobs, ...additional];
+      }
 
       const finalRecommendations = scoredJobs
         .map(sj => {
@@ -569,17 +583,18 @@ Select the best 6 matches. Return JSON only.`;
           };
         })
         .filter(Boolean)
-        .sort((a: any, b: any) => b.matchScore - a.matchScore);
+        .sort((a: any, b: any) => b.matchScore - a.matchScore)
+        .slice(0, 6);
 
       return res.json({ recommendations: finalRecommendations });
 
     } catch (parseErr) {
       console.error("AI Response Parsing Error:", parseErr, "\nRaw Response:", aiResponse);
-      // Smart fallback: return newest jobs with a clear label
+      // Smart fallback: return newest 6 jobs with a clear Discovery label
       const fallbackJobs = availableJobs.slice(0, 6).map(j => ({
         ...j,
         matchScore: 65,
-        fitReason: "Trending opportunity matching your career area."
+        fitReason: "Discovery: High-potential job based on current trends."
       }));
       return res.json({ recommendations: fallbackJobs });
     }
