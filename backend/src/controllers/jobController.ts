@@ -95,18 +95,32 @@ export const getAllJobs = async (req: Request, res: Response) => {
       minSalary,
       maxSalary,
       page = '1',
-      limit = '10',
+      limit = '20',
       sort = 'desc',
-      ids,                     // <-- NEW
+      ids,
     } = req.query as Record<string, string>;
 
     const pageNumber = Math.max(1, parseInt(page as string, 10) || 1);
-    const pageSize = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 10));
+    const pageSize = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 20));
     const sortOrder = (sort === 'asc' ? 'asc' : 'desc') as 'asc' | 'desc';
 
     const where: any = {};
 
-    // NEW: ids filter (comma-separated or repeated)
+    // Auto-exclude expired external jobs globally
+    const now = new Date();
+    where.AND = where.AND || [];
+    where.AND.push({
+      OR: [
+        { workTime: null },
+        { workTime: { not: { startsWith: 'EXP:' } } },
+        // Keep non-EXP workTime jobs (normal recruiter jobs)
+      ]
+    });
+    // Additionally filter out EXP: jobs where date has passed
+    // We do this in-memory after fetch since Prisma can't compare date strings natively
+    // So we make the DB return all, then filter. See post-fetch filter below.
+
+    // ids filter
     if (ids) {
       const list = (Array.isArray(ids) ? ids : ids.split(','))
         .map((s) => parseInt(String(s).trim(), 10))
@@ -116,7 +130,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
       }
     }
 
-    // existing combined search
+    // Combined search
     const searchTerm = (title as string) || (search as string) || '';
     if (searchTerm) {
       where.OR = [
@@ -131,7 +145,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
     if (role) where.role = role;
     if (workMode) where.workMode = workMode as any;
 
-    // salary overlap logic (unchanged)
+    // Salary overlap
     const minS = minSalary !== undefined && minSalary !== null ? Number(minSalary) : undefined;
     const maxS = maxSalary !== undefined && maxSalary !== null ? Number(maxSalary) : undefined;
     if (minS !== undefined || maxS !== undefined) {
@@ -140,20 +154,35 @@ export const getAllJobs = async (req: Request, res: Response) => {
       if (maxS !== undefined) where.AND.push({ salaryMin: { lte: maxS } });
     }
 
-    const total = await prisma.job.count({ where });
-
-    const jobs = await prisma.job.findMany({
+    // Fetch more to account for in-memory expiry filter
+    const fetchSize = pageSize * 3;
+    const allJobs = await prisma.job.findMany({
       where,
       include: { postedBy: { select: { id: true, name: true, email: true } } },
       orderBy: { createdAt: sortOrder },
-      skip: (pageNumber - 1) * pageSize,
-      take: pageSize,
     });
+
+    // In-memory expiry filter: remove EXP: jobs that have passed their date
+    const validJobs = allJobs.filter((job) => {
+      if (job.workTime && job.workTime.startsWith('EXP:')) {
+        const expStr = job.workTime.replace('EXP:', '');
+        try {
+          const expDate = new Date(expStr);
+          return expDate > now; // Keep only if not yet expired
+        } catch {
+          return false;
+        }
+      }
+      return true; // Normal recruiter jobs always shown
+    });
+
+    const total = validJobs.length;
+    const paginatedJobs = validJobs.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
 
     return res.json({
       total,
       page: pageNumber,
-      pageSize: jobs.length,
+      pageSize: paginatedJobs.length,
       totalPages: Math.ceil(total / pageSize),
       filtersApplied: {
         search: searchTerm || '',
@@ -166,7 +195,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
         sort: sortOrder,
         ids: ids || '',
       },
-      jobs,
+      jobs: paginatedJobs,
     });
   } catch (err: any) {
     console.error('getAllJobs error:', err);

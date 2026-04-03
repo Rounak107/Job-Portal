@@ -13,7 +13,7 @@ import {
 import { authMiddleware } from '../middleware/authMiddleware';
 import { roleMiddleware } from '../middleware/roleMiddleware';
 import { Role } from '@prisma/client';
-import { syncExternalJobs } from '../controllers/jobSyncController';
+import { syncExternalJobs, cleanExpiredJobs } from '../controllers/jobSyncController';
 
 const router = express.Router();
 
@@ -35,8 +35,11 @@ router.delete('/:id', authMiddleware, roleMiddleware([Role.RECRUITER, Role.ADMIN
 // filter metadata (public)
 router.get('/filters', getJobFilters);
 
-// sync external jobs (public for now, or could restrict to admin)
+// sync external jobs (AI-powered govt + private via Jooble)
 router.post('/sync-external', syncExternalJobs);
+
+// clean expired external job listings
+router.post('/clean-expired', cleanExpiredJobs);
 
 // list jobs (public with optional filters)
 router.get('/', getAllJobs);
