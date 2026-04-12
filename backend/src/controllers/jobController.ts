@@ -106,17 +106,6 @@ export const getAllJobs = async (req: Request, res: Response) => {
 
     const where: any = {};
 
-    // Auto-exclude expired external jobs globally
-    const now = new Date();
-    where.AND = where.AND || [];
-    where.AND.push({
-      OR: [
-        { workTime: null },
-        { workTime: { not: { startsWith: 'EXP:' } } },
-        // Keep non-EXP workTime jobs (normal recruiter jobs)
-      ]
-    });
-    // Additionally filter out EXP: jobs where date has passed
     // We do this in-memory after fetch since Prisma can't compare date strings natively
     // So we make the DB return all, then filter. See post-fetch filter below.
 
@@ -163,6 +152,7 @@ export const getAllJobs = async (req: Request, res: Response) => {
     });
 
     // In-memory expiry filter: remove EXP: jobs that have passed their date
+    const now = new Date();
     const validJobs = allJobs.filter((job) => {
       if (job.workTime && job.workTime.startsWith('EXP:')) {
         const expStr = job.workTime.replace('EXP:', '');

@@ -128,7 +128,7 @@ export async function syncPrivateJobs(adminId: number) {
       );
 
       const listings: any[] = response.data?.jobs || [];
-      for (const listing of listings.slice(0, 10)) {
+      for (const listing of listings.slice(0, 25)) {
         const title = listing.title?.trim();
         const company = listing.company?.trim() || 'Private Company';
         if (!title) continue;
