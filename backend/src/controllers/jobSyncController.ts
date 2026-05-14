@@ -270,6 +270,7 @@ export const cleanExpiredJobs = async (req: Request, res: Response) => {
     const externalJobs = await prisma.job.findMany({
       where: {
         workTime: { startsWith: 'EXP:' },
+        postedBy: { role: 'ADMIN' } // ✅ SAFETY GUARD: Protect recruiter jobs
       },
       select: { id: true, workTime: true, title: true },
     });
@@ -313,7 +314,10 @@ export const syncExternalJobs = async (req: Request, res: Response) => {
 
     // Step 1: Clean expired listings
     const allExternal = await prisma.job.findMany({
-      where: { workTime: { startsWith: 'EXP:' } },
+      where: { 
+        workTime: { startsWith: 'EXP:' },
+        postedBy: { role: 'ADMIN' } // ✅ SAFETY GUARD: Never touch recruiter jobs
+      },
       select: { id: true, workTime: true },
     });
 

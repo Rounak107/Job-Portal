@@ -131,7 +131,21 @@ export const getAllJobs = async (req: Request, res: Response) => {
 
     if (location) where.location = { contains: location, mode: 'insensitive' };
     if (company) where.company = { contains: company, mode: 'insensitive' };
-    if (role) where.role = role;
+    
+    if (role) {
+      if (role === 'Private-External') {
+        where.AND = where.AND || [];
+        where.AND.push({
+          OR: [
+            { role: 'Private-External' },
+            { postedBy: { role: Role.RECRUITER } }
+          ]
+        });
+      } else {
+        where.role = role;
+      }
+    }
+    
     if (workMode) where.workMode = workMode as any;
 
     // Salary overlap

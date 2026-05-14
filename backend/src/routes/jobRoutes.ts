@@ -36,10 +36,10 @@ router.delete('/:id', authMiddleware, roleMiddleware([Role.RECRUITER, Role.ADMIN
 router.get('/filters', getJobFilters);
 
 // sync external jobs (AI-powered govt + private via Jooble)
-router.all('/sync-external', syncExternalJobs);
+router.all('/sync-external', authMiddleware, roleMiddleware([Role.ADMIN]), syncExternalJobs);
 
 // clean expired external job listings
-router.all('/clean-expired', cleanExpiredJobs);
+router.all('/clean-expired', authMiddleware, roleMiddleware([Role.ADMIN]), cleanExpiredJobs);
 
 // list jobs (public with optional filters)
 router.get('/', getAllJobs);
